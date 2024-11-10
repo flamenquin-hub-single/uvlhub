@@ -1,14 +1,21 @@
-from flask import render_template, redirect, url_for, request
+from flask import Flask, render_template, redirect, url_for, request
 from flask_login import current_user, login_user, logout_user
-
 from app.modules.auth import auth_bp
 from app.modules.auth.forms import SignupForm, LoginForm
 from app.modules.auth.services import AuthenticationService
 from app.modules.profile.services import UserProfileService
-
+from flask_dance.contrib.github import make_github_blueprint, github
 
 authentication_service = AuthenticationService()
 user_profile_service = UserProfileService()
+
+app = Flask(__name__)
+app.config["SECRET_KEY"] = "SECRET KEY  "
+
+github_blueprint = make_github_blueprint(client_id='Ov23liH3c6144kMW6I2g',
+                                        client_secret='00b92023ceb36020d4d0a7f34d5a583e2e386611')
+
+app.register_blueprint(github_blueprint, url_prefix='/github_login')
 
 
 @auth_bp.route("/signup/", methods=["GET", "POST"])
@@ -53,3 +60,17 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('public.index'))
+
+
+@auth_bp.route('/gitlogin')
+def github_login():
+    
+   if not github.authorized:
+       return redirect(url_for('github.login'))
+   else:
+       account_info = github.get('/user/repos')
+       if account_info.ok:
+           account_info_json = account_info.json()
+           return '<h1>Your Github repo is {}'.format(account_info_json[1]['name'])
+
+   return '<h1>Request failed!</h1>'

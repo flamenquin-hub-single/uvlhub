@@ -170,6 +170,10 @@ chico sundermann">
 
                         {% else %}
 
+                        <a href="{{ url_for('auth.github_login') }}">
+                            <button>Sync with Github</button>
+                        </a> 
+
                         <a class="nav-icon dropdown-toggle d-inline-block d-sm-none" href="#" data-bs-toggle="dropdown">
                             <i class="align-middle" data-feather="user"></i> 
                         </a>
