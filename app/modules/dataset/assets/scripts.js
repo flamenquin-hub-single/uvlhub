@@ -237,3 +237,10 @@ var currentId = 0;
             let orcidRegex = /^\d{4}-\d{4}-\d{4}-\d{4}$/;
             return orcidRegex.test(orcid);
         }
+
+        function downloadDataset(datasetId, format) {
+            const url = `/dataset/download/${datasetId}/${format}`;
+            window.location.href = url;
+        }
+        
+        
