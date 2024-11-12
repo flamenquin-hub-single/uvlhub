@@ -117,6 +117,25 @@ def list_dataset():
         local_datasets=dataset_service.get_unsynchronized(current_user.id),
     )
 
+@dataset_bp.route("/dataset/check", methods=["GET", "POST"])
+@login_required
+def check_dataset():
+    form = DataSetForm()
+    if request.method=="POST": 
+        file = request.files["file"]
+
+        if not file or not file.filename.endswith(".uvl"):
+            return jsonify({"message": "No valid file"}), 400
+        
+        contents = file.read()
+        print(contents)
+
+
+    return render_template(
+        "dataset/check_datasets.html", form = form )
+
+
+
 
 @dataset_bp.route("/dataset/file/upload", methods=["POST"])
 @login_required
@@ -156,6 +175,29 @@ def upload():
             {
                 "message": "UVL uploaded and validated successfully",
                 "filename": new_filename,
+            }
+        ),
+        200,
+    )
+
+@dataset_bp.route("/dataset/file/check", methods=["POST"])
+@login_required
+def check():
+    temp_folder = current_user.temp_folder()
+    print("hi")
+    print(temp_folder)
+    #if not file or not file.filename.endswith(".uvl"):
+    #    return jsonify({"message": "No valid file"}), 400
+    #test = file.read()
+    #res = ""
+    #for i in test:
+    #    res+=chr(i)
+    #print(res)
+    return (
+        jsonify(
+            {
+                "message": "UVL uploaded and validated successfully",
+                "filename": "hi",
             }
         ),
         200,
