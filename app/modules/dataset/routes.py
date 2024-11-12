@@ -6,6 +6,7 @@ import tempfile
 import uuid
 from datetime import datetime, timezone
 from zipfile import ZipFile
+from flask import jsonify, redirect, url_for
 
 from flask import (
     redirect,
@@ -278,3 +279,23 @@ def get_unsynchronized_dataset(dataset_id):
         abort(404)
 
     return render_template("dataset/view_dataset.html", dataset=dataset)
+
+
+@dataset_bp.route("/dataset/download/<int:file_id>/<string:format>", methods=["GET"])
+def download_dataset_format(file_id, format):
+    """
+    Endpoint to download dataset in the specified format.
+    Formats supported: uvl, glencoe, splot, dimacs, zip.
+    """
+    # Redirigir a los endpoints de flamapy según el formato solicitado
+    if format == "glencoe":
+        return redirect(url_for("flamapy.to_glencoe", file_id=file_id))
+    elif format == "splot":
+        return redirect(url_for("flamapy.to_splot", file_id=file_id))
+    elif format == "dimacs":
+        return redirect(url_for("flamapy.to_cnf", file_id=file_id))
+    elif format == "zip":
+        # Redirige al endpoint original de descarga ZIP
+        return redirect(url_for("dataset.download_dataset", dataset_id=file_id))
+    else:
+        return jsonify({"error": "Formato no soportado"}), 400
