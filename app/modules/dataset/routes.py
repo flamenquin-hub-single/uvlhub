@@ -259,9 +259,44 @@ def subdomain_index(doi):
     # Get dataset
     dataset = ds_meta_data.data_set
 
+
+    # Export DataSet to BibTex
+    closing_ = "},"
+    bibtex_properties = ["@misc{MiscUvl" + ds_meta_data.title.replace(" ", "") + ","]
+    bibtex_properties.append("  author = {" + " and ".join([a_.name for a_ in ds_meta_data.authors]) + closing_)
+    bibtex_properties.append("  title = {" + ds_meta_data.title + closing_)
+    
+    if os.environ.get("FLASK_ENV").lower()=="production":
+        bibtex_properties.append("  howpublished = {https://zenodo.org/records/" + str(ds_meta_data.deposition_id) + closing_)
+    else:
+        bibtex_properties.append("  howpublished = {https://sandbox.zenodo.org/records/" + str(ds_meta_data.deposition_id) + closing_)
+    bibtex_properties.append("  year = {" + str(dataset.created_at.date().year) + closing_)
+    bibtex_properties.append("  note = {Accessed: " + str(datetime.now().date()) + closing_) #opcional
+    bibtex_properties.append("  annote = {" + ds_meta_data.description + closing_) #opcional
+
+    bibtex_properties[-1] = bibtex_properties[-1][:-1]
+    bibtex_properties.append("}")
+    bibtex_dataset = "\n".join(bibtex_properties)
+    
+    max_preview_len = 60
+    bibtex_preview = bibtex_dataset if len(bibtex_dataset)<=max_preview_len else bibtex_dataset[:max_preview_len] + " ..."
+
     # Save the cookie to the user's browser
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
-    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset))
+    
+    n_px = 17*(int(len(bibtex_properties)/2)+1)
+
+    page_render = render_template("dataset/view_dataset.html",
+                    dataset=dataset,
+                    bibtex_dataset=bibtex_dataset,
+                    bibtex_preview=bibtex_preview,
+                    bibtex_preview_start = bibtex_properties[0],
+                    bibtex_preview_lines=bibtex_properties[1:-1],
+                    bibtex_preview_end = bibtex_properties[-1]).replace('id="boton_exportar_bibtex">',
+                    'id="boton_exportar_bibtex" style="padding-top: {}px;padding-bottom: {}px;">'.format(n_px, n_px), 1)
+
+    resp = make_response(page_render)
+    # resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset))
     resp.set_cookie("view_cookie", user_cookie)
 
     return resp

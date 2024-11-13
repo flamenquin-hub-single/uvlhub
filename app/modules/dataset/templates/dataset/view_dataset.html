@@ -158,6 +158,43 @@
 
             </div>
 
+            {% if bibtex_dataset %}
+            <div class="card-body" style="padding-top: 0px">
+                <div id="dataset_bibtex_export" style="display: none">
+                    {{ bibtex_dataset }}
+                </div>
+
+                <button type="button" class="btn doi_button btn-sm" onclick="copyText('dataset_bibtex_export')">
+                    <span class="button_doi_id" id="boton_exportar_bibtex">
+                        <i data-feather="clipboard" class="center-button-icon"></i>
+                        <b>BibTex</b>
+                    </span>
+
+                    
+                    <!-- <span class="doi_text">
+                        {{ bibtex_dataset }}
+                    </span> -->
+                   
+                    
+                    
+                    <!-- <span class="doi_text">
+                        {{ bibtex_preview }}
+                    </span> -->
+                   
+
+                    
+                    <div class="doi_text">
+                        <div>{{ bibtex_preview_start }}</div>
+                        {% for bib_line in bibtex_preview_lines %}
+                        <div>&nbsp;&nbsp;{{ bib_line }}</div>
+                        {% endfor %}
+                        <div>{{ bibtex_preview_end }}</div>
+                    </div>
+                   
+                </button>
+            </div>
+            {% endif %}
+
             {% if dataset.ds_meta_data.dataset_doi %}
             <div class="card-body" style="padding-top: 0px">
 
@@ -181,6 +218,8 @@
                 
             </div>
             {% endif %}
+
+            
 
         </div>
 
