@@ -122,14 +122,24 @@ def list_dataset():
 def check_dataset():
     form = DataSetForm()
     if request.method=="POST": 
-        file = request.files["file"]
 
-        if not file or not file.filename.endswith(".uvl"):
-            return jsonify({"message": "No valid file"}), 400
+        temp_folder = current_user.temp_folder()
+        if not os.path.exists(temp_folder):
+           return jsonify({"message": "Something went wrong, try again"}), 400
         
-        contents = file.read()
-        print(contents)
-
+        filename = os.listdir(temp_folder)[0]
+        file_path = os.path.join(temp_folder, filename)
+        
+        with open(file_path) as f:
+            indent = 0
+            x = "".join([i for i in f])
+            print(x)
+        return jsonify({"message": x}),200
+   
+    # setting things up for the checker to have only one file available
+    temp_folder = current_user.temp_folder()
+    if os.path.exists(temp_folder) and os.path.isdir(temp_folder):
+            shutil.rmtree(temp_folder)
 
     return render_template(
         "dataset/check_datasets.html", form = form )
@@ -180,28 +190,6 @@ def upload():
         200,
     )
 
-@dataset_bp.route("/dataset/file/check", methods=["POST"])
-@login_required
-def check():
-    temp_folder = current_user.temp_folder()
-    print("hi")
-    print(temp_folder)
-    #if not file or not file.filename.endswith(".uvl"):
-    #    return jsonify({"message": "No valid file"}), 400
-    #test = file.read()
-    #res = ""
-    #for i in test:
-    #    res+=chr(i)
-    #print(res)
-    return (
-        jsonify(
-            {
-                "message": "UVL uploaded and validated successfully",
-                "filename": "hi",
-            }
-        ),
-        200,
-    )
 
 
 @dataset_bp.route("/dataset/file/delete", methods=["POST"])

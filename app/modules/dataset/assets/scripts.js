@@ -156,7 +156,7 @@ var currentId = 0;
 							console.log('Dataset sent successfully');
 							response.json().then(data => {
 								console.log(data.message);
-								window.location.href = "/dataset/list";
+								//window.location.href = "/dataset/list";
 							});
 						} else {
 							response.json().then(data => {
