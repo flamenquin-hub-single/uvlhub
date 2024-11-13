@@ -16,13 +16,18 @@ function send_query() {
         filter.addEventListener('input', () => {
             const csrfToken = document.getElementById('csrf_token').value;
 
+            const minFiles = document.getElementById('min_files').value || null;
+            const maxFiles = document.getElementById('max_files').value || null;
+
             const searchCriteria = {
                 csrf_token: csrfToken,
                 query: document.querySelector('#query').value,
                 publication_type: document.querySelector('#publication_type').value,
                 sorting: document.querySelector('[name="sorting"]:checked').value,
+                min_files: minFiles,
+                max_files: maxFiles
             };
-
+            
             console.log(document.querySelector('#publication_type').value);
 
             fetch('/explore', {
@@ -178,6 +183,12 @@ function clearFilters() {
         option.checked = option.value == "newest"; // replace "default" with whatever your default value is
         // option.dispatchEvent(new Event('input', {bubbles: true}));
     });
+
+    let minFilesInput = document.querySelector('#min_files');
+    let maxFilesInput = document.querySelector('#max_files');
+    minFilesInput.value = ""; 
+    maxFilesInput.value = ""; 
+
 
     // Perform a new search with the reset filters
     queryInput.dispatchEvent(new Event('input', {bubbles: true}));

@@ -10,12 +10,17 @@ class ExploreRepository(BaseRepository):
     def __init__(self):
         super().__init__(DataSet)
 
-    def filter(self, query="", sorting="newest", publication_type="any", tags=[], **kwargs):
+    def filter(self, query="", sorting="newest",
+               publication_type="any", tags=[],
+               min_files=None, max_files=None, **kwargs):
         # Normalize and remove unwanted characters
         normalized_query = unidecode.unidecode(query).lower()
         cleaned_query = re.sub(r'[,.":\'()\[\]^;!¡¿?]', "", normalized_query)
 
         filters = []
+        min_files = int(min_files) if min_files is not None else None
+        max_files = int(max_files) if max_files is not None else None
+
         for word in cleaned_query.split():
             filters.append(DSMetaData.title.ilike(f"%{word}%"))
             filters.append(DSMetaData.description.ilike(f"%{word}%"))
@@ -58,4 +63,11 @@ class ExploreRepository(BaseRepository):
         else:
             datasets = datasets.order_by(self.model.created_at.desc())
 
-        return datasets.all()
+        datasets = datasets.all()
+
+        if min_files is not None:
+            datasets = [dataset for dataset in datasets if dataset.get_files_count() >= min_files]
+        if max_files is not None:
+            datasets = [dataset for dataset in datasets if dataset.get_files_count() <= max_files]
+
+        return datasets
