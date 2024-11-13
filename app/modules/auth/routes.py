@@ -13,7 +13,7 @@ user_profile_service = UserProfileService()
 
 app = Flask(__name__)
 #app.config["SECRET_KEY"] = "SECRET KEY  "
-token_admin = os.getenv("GITHUB_TOKEN_ADMIN")
+token_admin = os.getenv("ORG_TOKEN_ADMIN")
 
 github_blueprint = make_github_blueprint(client_id='Ov23liH3c6144kMW6I2g',
                                         client_secret='00b92023ceb36020d4d0a7f34d5a583e2e386611')
