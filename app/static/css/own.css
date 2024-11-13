@@ -142,8 +142,10 @@
     background-color: #147ABB;
     padding: 10px;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     transition: background-color 0.3s ease;
+    text-wrap: wrap;
 }
 
 .doi_button:hover .doi_text {
