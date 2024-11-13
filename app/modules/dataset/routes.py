@@ -93,6 +93,33 @@ def list_dataset():
         local_datasets=dataset_service.get_unsynchronized(current_user.id),
     )
 
+@dataset_bp.route("/dataset/check", methods=["GET", "POST"])
+@login_required
+def check_dataset():
+    form = DataSetForm()
+    if request.method=="POST": 
+
+        temp_folder = current_user.temp_folder()
+        if not os.path.exists(temp_folder):
+           return jsonify({"message": "Something went wrong, try again"}), 400
+        
+        filename = os.listdir(temp_folder)[0]
+        file_path = os.path.join(temp_folder, filename)
+        
+        with open(file_path) as f:
+            indent = 0
+            x = "".join([i for i in f])
+            print(x)
+        return jsonify({"message": x}),200
+   
+    # setting things up for the checker to have only one file available
+    temp_folder = current_user.temp_folder()
+    if os.path.exists(temp_folder) and os.path.isdir(temp_folder):
+            shutil.rmtree(temp_folder)
+
+    return render_template(
+        "dataset/check_datasets.html", form = form )
+
 @dataset_bp.route("/dataset/file/upload", methods=["POST"])
 @login_required
 def upload():
