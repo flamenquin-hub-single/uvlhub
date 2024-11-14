@@ -113,6 +113,16 @@ class DataSetRepository(BaseRepository):
             .limit(5)
             .all()
         )
+        
+    def get_all_files_for_dataset(self, dataset_id: int):
+        dataset = self.model.query.get(dataset_id)
+        if not dataset:
+            return None
+        all_files = []
+        for feature_model in dataset.feature_models:
+            all_files.extend(feature_model.files)
+        return all_files
+
 
 
 class DOIMappingRepository(BaseRepository):

@@ -1,4 +1,6 @@
 import os
+import shutil
+import subprocess
 from flask import Flask, jsonify, render_template, redirect, url_for, request
 from flask_login import current_user, login_user, logout_user
 import requests
@@ -7,6 +9,8 @@ from app.modules.auth.forms import SignupForm, LoginForm
 from app.modules.auth.services import AuthenticationService
 from app.modules.profile.services import UserProfileService
 from flask_dance.contrib.github import make_github_blueprint, github
+
+from app.modules.dataset.repositories import DataSetRepository
 
 authentication_service = AuthenticationService()
 user_profile_service = UserProfileService()
@@ -82,39 +86,98 @@ def github_login():
 @auth_bp.route('/invite', methods=['GET', 'POST'])
 def invite_user():
     account_info = github.get('/user')
+    
     if account_info.ok:
         username = account_info.json()['login']
-        #username = "Javiruizg"
-         
-        # API de GitHub para invitar a un usuario a una organización
-        url = f'https://api.github.com/orgs/uvlhub/invitations'  
-        headers = {
-            'Authorization': f'token {token_admin}',
-            'Accept': 'application/vnd.github.v3+json'
-        }
-        payload = {
-            "invitee_id": None,  # Esta es una asignación temporal
-        }
-
-        # Obtener el ID del usuario desde la API de GitHub
-        user_url = f'https://api.github.com/users/{username}'
-        user_response = requests.get(user_url, headers=headers)
-        
-        if user_response.status_code == 200:
-            user_id = user_response.json().get("id")
-            payload["invitee_id"] = user_id  # Actualizo el invitee_id con el ID real del usuario de github
-        else:
-            return jsonify({"error": f"No se pudo encontrar el usuario {username}"}), 404
-
-        # Enviar la invitación a la organización
-        response = requests.post(url, json=payload, headers=headers)
-
-        if response.status_code == 201:
-            return jsonify({"message": f"Invitación enviada a {username} exitosamente."}), 201
-        elif response.status_code == 404:
-            return jsonify({"error": f"Usuario {username} no encontrado."}), 404
-        else:
-            return jsonify({"error": "No se pudo enviar la invitación", "details": response.json()}), response.status_code
-        
     else:
-        return '<h1>Request failed! First sync your account with github</h1>'
+        return '<h1>First sync your github account</h1>'
+              
+    # INVITACION A LA ORGANIZACION
+    url = f'https://api.github.com/orgs/uvlhub/invitations'  
+    headers = {
+        'Authorization': f'token {token_admin}',
+        'Accept': 'application/vnd.github.v3+json'
+    }
+    payload = {
+        "invitee_id": None, 
+    }
+
+    # OBTENER EL ID DEL USUARIO DE GITHUB
+    user_url = f'https://api.github.com/users/{username}'
+    user_response = requests.get(user_url, headers=headers)
+    
+    if user_response.status_code == 200:
+        user_id = user_response.json().get("id")
+        payload["invitee_id"] = user_id  
+    else:
+        return jsonify({"error": f"No se pudo encontrar el usuario {username}"}), 404
+
+    # ENVIA LA INVITACION AL USUARIO
+    response = requests.post(url, json=payload, headers=headers)
+
+    if response.status_code == 201:
+        return jsonify({"message": f"Invitación enviada a {username} exitosamente."}), 201
+    
+    elif response.status_code == 404:
+        return jsonify({"error": f"Usuario {username} no encontrado."}), 404
+    
+    else:
+        return jsonify({"error": "No se pudo enviar la invitación", "details": response.json()}), response.status_code
+    
+
+
+@auth_bp.route('/create_repo', methods=['GET', 'POST'])
+def crear_repo():
+
+    #A PARTIR DE AQUI EL USERNAME SERA EL DE UVLHUB 
+    nombre_repositorio = "Javiruizg"
+
+    # Definir el comando que se ejecutará
+    comando = f"gh repo create uvlhub/{nombre_repositorio} --public"
+    url_repo = f"https://github.com/uvlhub/{nombre_repositorio}.git"
+    
+    try:
+        # Ejecutar el comando en el sistema
+        subprocess.run(comando, check=True, shell=True)
+        subprocess.run(f"git clone {url_repo}", check=True, shell=True)
+        return f"Repositorio '{nombre_repositorio}' creado exitosamente en la organización uvlhub."
+    except subprocess.CalledProcessError as e:
+        return f"Hubo un error al crear el repositorio: {e}"
+    
+    
+    
+@auth_bp.route('/commit', methods=['GET','POST'])
+def hacer_commit():
+    
+    try:
+        # Cambiar al directorio del repositorio
+        
+        ruta_repositorio = os.path.join(os.getcwd(), "Javiruizg")
+        
+        # Corregir el cambio de directorio en cada ejecución
+        if os.path.basename(os.getcwd()) != "Javiruizg":
+            os.chdir(ruta_repositorio)
+        
+        dataset_repository = DataSetRepository()
+        all_files = dataset_repository.get_all_files_for_dataset(1)
+        print(all_files)
+        
+        archivos_a_subir = [f.name for f in all_files]
+        
+        # Ejecutar git add, git commit y git push
+        for archivo in archivos_a_subir:
+
+            ruta_archivo_origen = f"/home/javier/uvlhub/app/modules/dataset/uvl_examples/{archivo}"
+            ruta_destino_archivo = os.path.join(ruta_repositorio, os.path.basename(ruta_archivo_origen))
+            # Copiar el archivo desde la ruta de origen a la carpeta del repositorio
+            shutil.copy(ruta_archivo_origen, ruta_destino_archivo)
+            print(archivo)
+            subprocess.run(f"git add {os.getcwd()}/{archivo}", check=True, shell=True)
+            
+        subprocess.run('git commit -m "Commit realizado desde Flask"', check=True, shell=True)
+        subprocess.run("git push origin main", check=True, shell=True)
+
+        return "Los cambios han sido commiteados y enviados al repositorio con éxito."
+
+    except subprocess.CalledProcessError as e:
+        return f"Hubo un error al hacer commit y push: {e.stderr}"
