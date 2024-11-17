@@ -12,7 +12,11 @@ class ExploreRepository(BaseRepository):
 
     def filter(self, query="", sorting="newest",
                publication_type="any", tags=[],
-               min_files=None, max_files=None, **kwargs):
+               min_files=None, max_files=None,
+               min_leaf_count=None, max_leaf_count=None,
+               min_depth=None, max_depth=None,
+               min_av_branching_factor=None, max_av_branching_factor=None,
+               **kwargs):
         # Normalize and remove unwanted characters
         normalized_query = unidecode.unidecode(query).lower()
         cleaned_query = re.sub(r'[,.":\'()\[\]^;!¡¿?]', "", normalized_query)
@@ -20,6 +24,15 @@ class ExploreRepository(BaseRepository):
         filters = []
         min_files = int(min_files) if min_files is not None else None
         max_files = int(max_files) if max_files is not None else None
+
+        min_leaf_count = int(min_leaf_count) if min_leaf_count is not None else None
+        max_leaf_count = int(max_leaf_count) if max_leaf_count is not None else None
+
+        min_depth = int(min_depth) if min_depth is not None else None
+        max_depth = int(max_depth) if max_depth is not None else None
+
+        min_av_branching_factor = float(min_av_branching_factor) if min_av_branching_factor is not None else None
+        max_av_branching_factor = float(max_av_branching_factor) if max_av_branching_factor is not None else None
 
         for word in cleaned_query.split():
             filters.append(DSMetaData.title.ilike(f"%{word}%"))
@@ -70,4 +83,33 @@ class ExploreRepository(BaseRepository):
         if max_files is not None:
             datasets = [dataset for dataset in datasets if dataset.get_files_count() <= max_files]
 
-        return datasets
+        filtered_datasets = []
+
+        for dataset in datasets:
+            feature_models = dataset.feature_models  
+            dataset_passes_filter = False  
+
+            for model in feature_models:
+                stats = model.calculate_statistics()  
+                leaf_count = stats["leaf_count"]
+                depth = stats["max_depth"]
+                branching_factor = stats["branching_factor"]
+                print(dataset_passes_filter)
+
+                # Aplicar filtros a las estadísticas del modelo
+                if ((min_leaf_count is not None and leaf_count < min_leaf_count) or
+                    (max_leaf_count is not None and leaf_count > max_leaf_count) or
+                    (min_depth is not None and depth < min_depth) or
+                    (max_depth is not None and depth > max_depth) or
+                    (min_av_branching_factor is not None and branching_factor < min_av_branching_factor) or
+                        (max_av_branching_factor is not None and branching_factor > max_av_branching_factor)):
+                    continue
+
+                dataset_passes_filter = True
+                print("dataset_passes_filter")
+                break
+
+            if dataset_passes_filter:
+                filtered_datasets.append(dataset)  
+
+        return filtered_datasets

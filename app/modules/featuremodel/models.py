@@ -2,6 +2,9 @@ from app import db
 from sqlalchemy import Enum as SQLAlchemyEnum
 
 from app.modules.dataset.models import Author, PublicationType
+from flamapy.metamodels.fm_metamodel.transformations import UVLReader
+from flamapy.metamodels.fm_metamodel.operations import FMAverageBranchingFactor, FMCountLeafs
+from flamapy.metamodels.fm_metamodel.operations import FMMaxDepthTree
 
 
 class FeatureModel(db.Model):
@@ -13,6 +16,29 @@ class FeatureModel(db.Model):
 
     def __repr__(self):
         return f'FeatureModel<{self.id}>'
+
+    def calculate_statistics(self):
+        from app.modules.hubfile.services import HubfileService
+        hubfile = HubfileService().get_by_id(self.id)
+        fm = UVLReader(hubfile.get_path()).transform()
+
+        leaf_counter = FMCountLeafs()
+        leaf_counter.execute(fm)
+        leaf_count = leaf_counter.get_result()
+
+        depth_calculator = FMMaxDepthTree()
+        depth_calculator.execute(fm)
+        max_tree_depth = depth_calculator.get_result()
+
+        branching_factor_calculator = FMAverageBranchingFactor()
+        branching_factor_calculator.execute(fm)
+        average_branching_factor = branching_factor_calculator.get_result()
+
+        return {
+            "leaf_count": leaf_count,
+            "max_depth": max_tree_depth,
+            "branching_factor": average_branching_factor
+        }
 
 
 class FMMetaData(db.Model):
