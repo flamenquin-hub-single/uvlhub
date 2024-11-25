@@ -179,7 +179,7 @@
                     {{ dataset.get_uvlhub_doi() }}
                 </div>
 
-                <a href="{{ url_for('dataset.hacer_commit', dataset_id=dataset.id) }}" class="btn btn-primary mt-3" style="border-radius: 5px;">
+                <a href="{{ url_for('dataset.commit', dataset_id=dataset.id) }}" class="btn btn-primary mt-3" style="border-radius: 5px;">
                     <i class="center-button-icon"></i>
                     Upload all models to github
                 </a>
@@ -274,6 +274,10 @@
                                 
                             </div>
                             <div class="col-12 text-end" >
+
+                                <a href="{{ url_for('dataset.commit_file', file_id=file.id) }}" class="btn btn-outline-secondary btn-sm" style="border-radius: 5px;">
+                                    <i data-feather="github"></i> Upload
+                                </a>
 
                                 <button onclick="viewFile('{{ file.id }}')" class="btn btn-outline-secondary btn-sm" style="border-radius: 5px;">
                                     <i data-feather="eye"></i> View

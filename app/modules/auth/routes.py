@@ -92,7 +92,6 @@ def invite_user():
     else:
         return '<h1>First sync your github account</h1>'
               
-    # INVITACION A LA ORGANIZACION
     url = f'https://api.github.com/orgs/uvlhub/invitations'  
     headers = {
         'Authorization': f'token {token_admin}',
@@ -112,7 +111,6 @@ def invite_user():
     else:
         return jsonify({"error": f"Can't find the user: {username}"}), 404
 
-    # ENVIA LA INVITACION AL USUARIO
     response = requests.post(url, json=payload, headers=headers)
 
     if response.status_code == 201:
@@ -140,15 +138,17 @@ def crear_repo():
     else:
         return '<h1>First sync your github account</h1>'
 
-    # Definir el comando que se ejecutará
     comando = f"gh repo create uvlhub/{username} --public"
     url_repo = f"https://github.com/uvlhub/{username}.git"
     
     try:
-        # Ejecutar el comando en el sistema
+        
         subprocess.run(comando, check=True, shell=True)
-        subprocess.run(f"git clone {url_repo}", check=True, shell=True)
+        directory = f"/home/{os.getenv('USER')}/uvl_git/{username}"
+        os.makedirs(directory, exist_ok=True)
+        subprocess.run(f"git clone {url_repo} {directory}",cwd=directory, check=True, shell=True)
         return f"Repositorio '{username}' creado exitosamente en la organización uvlhub."
+    
     except subprocess.CalledProcessError as e:
         return f"El repositorio '{username}' ya está creado. Ahora siempre que su cuenta esté sincronizada con github, puede subir desde uvlhub sus archivos a este repositorio."
     

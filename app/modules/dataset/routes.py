@@ -19,7 +19,8 @@ from flask import (
     url_for,
 )
 from flask_login import login_required, current_user
-
+import requests
+from app.modules.dataset.repositories import DSMetaDataRepository
 from app.modules.dataset.forms import DataSetForm
 from app.modules.dataset.models import (
     DSDownloadRecord
@@ -34,6 +35,7 @@ from app.modules.dataset.services import (
     DataSetService,
     DOIMappingService
 )
+from app.modules.hubfile.repositories import HubfileRepository
 from app.modules.zenodo.services import ZenodoService
 from flask_dance.contrib.github import github
 
@@ -284,8 +286,8 @@ def get_unsynchronized_dataset(dataset_id):
     return render_template("dataset/view_dataset.html", dataset=dataset)
 
 
-@dataset_bp.route('/dataset/hacer_commit/<int:dataset_id>', methods=['GET','POST'])
-def hacer_commit(dataset_id):
+@dataset_bp.route('/dataset/commit/<int:dataset_id>', methods=['GET','POST'])
+def commit(dataset_id):
     
     account_info = github.get('/user')
     
@@ -295,32 +297,61 @@ def hacer_commit(dataset_id):
         return '<h1>First sync your github account</h1>'
     
     try:
-        # Cambiar al directorio del repositorio
-        if os.path.basename(os.getcwd()) != username:
-            ruta_repositorio = os.path.join(os.getcwd(), username)
-        
-        
-        dataset_repository = DataSetRepository()
-        all_files = dataset_repository.get_all_files_for_dataset(dataset_id)
-        print(all_files)
-        
-        archivos_a_subir = [f.name for f in all_files]
-        
-        # Ejecutar git add, git commit y git push
-        for archivo in archivos_a_subir:
-
-            ruta_archivo_origen = f"/home/javier/uvlhub/app/modules/dataset/uvl_examples/{archivo}"
-            ruta_destino_archivo = os.path.join(ruta_repositorio, os.path.basename(ruta_archivo_origen))
-            # Copiar el archivo desde la ruta de origen a la carpeta del repositorio
-            shutil.copy(ruta_archivo_origen, ruta_destino_archivo)
-            print(archivo)
-            subprocess.run(f"git add {os.getcwd()}/{archivo}", check=True, shell=True)
             
-        subprocess.run('git commit -m "Commit realizado desde Flask"', check=True, shell=True)
-        subprocess.run("git push origin main", check=True, shell=True)
+        ruta_repositorio = f"/home/{os.getenv('USER')}/uvl_git/{username}"
+        
+        repository = DataSetRepository()
+        nombre = repository.get_dataset_name(dataset_id)
+        ruta_carpeta = os.path.join(ruta_repositorio, nombre)
+        os.makedirs(ruta_carpeta, exist_ok=True)
+        
+        all_files = repository.get_all_files_for_dataset(dataset_id)
+        
+        for archivo in all_files:
+            
+            ruta_archivo_origen = f"/home/javier/uvlhub/app/modules/dataset/uvl_examples/{archivo.name}"
+            #ruta_archivo_origen = archivo.get_path()
+            ruta_destino_archivo = os.path.join(ruta_carpeta, os.path.basename(ruta_archivo_origen))
+            shutil.copy(ruta_archivo_origen, ruta_destino_archivo)
+            subprocess.run(f"git add {ruta_carpeta}/{archivo.name}",cwd=ruta_repositorio, check=True, shell=True)
+            
+        subprocess.run('git commit -m "Commit realizado desde uvlhub"',cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run("git push origin main",cwd=ruta_repositorio, check=True, shell=True)
 
         return "Los cambios han sido commiteados y enviados al repositorio con éxito."
 
     except subprocess.CalledProcessError as e:
-        return f"Hubo un error al hacer commit y push: {e.stderr}"
+        return f"Este dataset ya se encuentra en su repositorio de github"
+    
+    
+    
+@dataset_bp.route('/dataset/commit_file/<int:file_id>', methods=['GET','POST'])
+def commit_file(file_id):
+    
+    account_info = github.get('/user')
+    
+    if account_info.ok:
+        username = account_info.json()['login']
+    else:
+        return '<h1>First sync your github account</h1>'
+    
+    try:
+       
+        ruta_repositorio = f"/home/{os.getenv('USER')}/uvl_git/{username}"
+ 
+        hubfile_repository = HubfileRepository()
+        hubfile = hubfile_repository.get_hubfile_by_id(file_id)
+        #ruta_archivo_origen = hubfile.get_path()
+        ruta_archivo_origen = f"/home/javier/uvlhub/app/modules/dataset/uvl_examples/{hubfile.name}"
+        ruta_destino_archivo = os.path.join(ruta_repositorio, hubfile.name)
+        shutil.copy(ruta_archivo_origen, ruta_destino_archivo)
+        subprocess.run(f"git add {ruta_repositorio}/{hubfile.name}",cwd=ruta_repositorio, check=True, shell=True)
+            
+        subprocess.run('git commit -m "Commit realizado desde uvlhub"',cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run("git push origin main",cwd=ruta_repositorio, check=True, shell=True)
+
+        return "Los cambios han sido commiteados y enviados al repositorio con éxito."
+
+    except subprocess.CalledProcessError as e:
+        return f"Este modelo ya se encuentra en su repositorio de github"
 
