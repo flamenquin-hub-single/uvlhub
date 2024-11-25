@@ -78,7 +78,7 @@ def github_login():
        account_info = github.get('/user/repos')
        if account_info.ok:
            account_info_json = account_info.json()
-           return '<h1>Your Github repo is {}'.format(account_info_json[1]['name'])
+           return '<h1>Your github account is already sync with uvlhub</h1>'
 
    return '<h1>Request failed!</h1>'
 
@@ -110,16 +110,20 @@ def invite_user():
         user_id = user_response.json().get("id")
         payload["invitee_id"] = user_id  
     else:
-        return jsonify({"error": f"No se pudo encontrar el usuario {username}"}), 404
+        return jsonify({"error": f"Can't find the user: {username}"}), 404
 
     # ENVIA LA INVITACION AL USUARIO
     response = requests.post(url, json=payload, headers=headers)
 
     if response.status_code == 201:
-        return jsonify({"message": f"Invitación enviada a {username} exitosamente."}), 201
+        return f'Invitación enviada a {username} exitosamente. Debe aceptarla desde github y una vez pertenezca a nuestra organización no tenrá que repetir este proceso</h1>'
+        #return jsonify({"message": f"Invitación enviada a {username} exitosamente."}), 201
     
     elif response.status_code == 404:
         return jsonify({"error": f"Usuario {username} no encontrado."}), 404
+    
+    elif response.status_code == 422:
+        return f'El usuario {username} ya pertenece a nuestra organización de github o tiene una invitación válida para unirse. Compruébelo desde github'
     
     else:
         return jsonify({"error": "No se pudo enviar la invitación", "details": response.json()}), response.status_code
@@ -128,56 +132,23 @@ def invite_user():
 
 @auth_bp.route('/create_repo', methods=['GET', 'POST'])
 def crear_repo():
-
-    #A PARTIR DE AQUI EL USERNAME SERA EL DE UVLHUB 
-    nombre_repositorio = "Javiruizg"
+    
+    account_info = github.get('/user')
+    
+    if account_info.ok:
+        username = account_info.json()['login']
+    else:
+        return '<h1>First sync your github account</h1>'
 
     # Definir el comando que se ejecutará
-    comando = f"gh repo create uvlhub/{nombre_repositorio} --public"
-    url_repo = f"https://github.com/uvlhub/{nombre_repositorio}.git"
+    comando = f"gh repo create uvlhub/{username} --public"
+    url_repo = f"https://github.com/uvlhub/{username}.git"
     
     try:
         # Ejecutar el comando en el sistema
         subprocess.run(comando, check=True, shell=True)
         subprocess.run(f"git clone {url_repo}", check=True, shell=True)
-        return f"Repositorio '{nombre_repositorio}' creado exitosamente en la organización uvlhub."
+        return f"Repositorio '{username}' creado exitosamente en la organización uvlhub."
     except subprocess.CalledProcessError as e:
-        return f"Hubo un error al crear el repositorio: {e}"
+        return f"El repositorio '{username}' ya está creado. Ahora siempre que su cuenta esté sincronizada con github, puede subir desde uvlhub sus archivos a este repositorio."
     
-    
-    
-@auth_bp.route('/commit', methods=['GET','POST'])
-def hacer_commit():
-    
-    try:
-        # Cambiar al directorio del repositorio
-        
-        ruta_repositorio = os.path.join(os.getcwd(), "Javiruizg")
-        
-        # Corregir el cambio de directorio en cada ejecución
-        if os.path.basename(os.getcwd()) != "Javiruizg":
-            os.chdir(ruta_repositorio)
-        
-        dataset_repository = DataSetRepository()
-        all_files = dataset_repository.get_all_files_for_dataset(1)
-        print(all_files)
-        
-        archivos_a_subir = [f.name for f in all_files]
-        
-        # Ejecutar git add, git commit y git push
-        for archivo in archivos_a_subir:
-
-            ruta_archivo_origen = f"/home/javier/uvlhub/app/modules/dataset/uvl_examples/{archivo}"
-            ruta_destino_archivo = os.path.join(ruta_repositorio, os.path.basename(ruta_archivo_origen))
-            # Copiar el archivo desde la ruta de origen a la carpeta del repositorio
-            shutil.copy(ruta_archivo_origen, ruta_destino_archivo)
-            print(archivo)
-            subprocess.run(f"git add {os.getcwd()}/{archivo}", check=True, shell=True)
-            
-        subprocess.run('git commit -m "Commit realizado desde Flask"', check=True, shell=True)
-        subprocess.run("git push origin main", check=True, shell=True)
-
-        return "Los cambios han sido commiteados y enviados al repositorio con éxito."
-
-    except subprocess.CalledProcessError as e:
-        return f"Hubo un error al hacer commit y push: {e.stderr}"

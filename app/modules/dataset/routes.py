@@ -2,6 +2,7 @@ import logging
 import os
 import json
 import shutil
+import subprocess
 import tempfile
 import uuid
 from datetime import datetime, timezone
@@ -24,6 +25,7 @@ from app.modules.dataset.models import (
     DSDownloadRecord
 )
 from app.modules.dataset import dataset_bp
+from app.modules.dataset.repositories import DataSetRepository
 from app.modules.dataset.services import (
     AuthorService,
     DSDownloadRecordService,
@@ -33,6 +35,8 @@ from app.modules.dataset.services import (
     DOIMappingService
 )
 from app.modules.zenodo.services import ZenodoService
+from flask_dance.contrib.github import github
+
 
 logger = logging.getLogger(__name__)
 
@@ -278,3 +282,45 @@ def get_unsynchronized_dataset(dataset_id):
         abort(404)
 
     return render_template("dataset/view_dataset.html", dataset=dataset)
+
+
+@dataset_bp.route('/dataset/hacer_commit/<int:dataset_id>', methods=['GET','POST'])
+def hacer_commit(dataset_id):
+    
+    account_info = github.get('/user')
+    
+    if account_info.ok:
+        username = account_info.json()['login']
+    else:
+        return '<h1>First sync your github account</h1>'
+    
+    try:
+        # Cambiar al directorio del repositorio
+        if os.path.basename(os.getcwd()) != username:
+            ruta_repositorio = os.path.join(os.getcwd(), username)
+        
+        
+        dataset_repository = DataSetRepository()
+        all_files = dataset_repository.get_all_files_for_dataset(dataset_id)
+        print(all_files)
+        
+        archivos_a_subir = [f.name for f in all_files]
+        
+        # Ejecutar git add, git commit y git push
+        for archivo in archivos_a_subir:
+
+            ruta_archivo_origen = f"/home/javier/uvlhub/app/modules/dataset/uvl_examples/{archivo}"
+            ruta_destino_archivo = os.path.join(ruta_repositorio, os.path.basename(ruta_archivo_origen))
+            # Copiar el archivo desde la ruta de origen a la carpeta del repositorio
+            shutil.copy(ruta_archivo_origen, ruta_destino_archivo)
+            print(archivo)
+            subprocess.run(f"git add {os.getcwd()}/{archivo}", check=True, shell=True)
+            
+        subprocess.run('git commit -m "Commit realizado desde Flask"', check=True, shell=True)
+        subprocess.run("git push origin main", check=True, shell=True)
+
+        return "Los cambios han sido commiteados y enviados al repositorio con éxito."
+
+    except subprocess.CalledProcessError as e:
+        return f"Hubo un error al hacer commit y push: {e.stderr}"
+

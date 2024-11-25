@@ -159,7 +159,7 @@
             </div>
 
             {% if dataset.ds_meta_data.dataset_doi %}
-            <div class="card-body" style="padding-top: 0px">
+            <div class="card-body" style="padding-top: 0px; display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
 
                 <div id="dataset_doi_uvlhub" style="display: none">
                     {{ dataset.get_uvlhub_doi() }}
@@ -178,6 +178,12 @@
                 <div id="dataset_doi_uvlhub" style="display: none">
                     {{ dataset.get_uvlhub_doi() }}
                 </div>
+
+                <a href="{{ url_for('dataset.hacer_commit', dataset_id=dataset.id) }}" class="btn btn-primary mt-3" style="border-radius: 5px;">
+                    <i class="center-button-icon"></i>
+                    Upload all models to github
+                </a>
+
                 
             </div>
             {% endif %}
