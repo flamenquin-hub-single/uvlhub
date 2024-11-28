@@ -294,7 +294,7 @@ def commit(dataset_id):
     if account_info.ok:
         username = account_info.json()['login']
     else:
-        return '<h1>First sync your github account</h1>'
+        return 'First sync your github account.'
     
     try:
             
@@ -318,10 +318,10 @@ def commit(dataset_id):
         subprocess.run('git commit -m "Commit realizado desde uvlhub"',cwd=ruta_repositorio, check=True, shell=True)
         subprocess.run("git push origin main",cwd=ruta_repositorio, check=True, shell=True)
 
-        return "Los cambios han sido commiteados y enviados al repositorio con éxito."
+        return "Dataset have been pushed to github correctly."
 
     except subprocess.CalledProcessError as e:
-        return f"Este dataset ya se encuentra en su repositorio de github"
+        return f"This dataset is already in your github repository."
     
     
     
@@ -333,7 +333,7 @@ def commit_file(file_id):
     if account_info.ok:
         username = account_info.json()['login']
     else:
-        return '<h1>First sync your github account</h1>'
+        return 'First sync your github account.'
     
     try:
        
@@ -350,8 +350,8 @@ def commit_file(file_id):
         subprocess.run('git commit -m "Commit realizado desde uvlhub"',cwd=ruta_repositorio, check=True, shell=True)
         subprocess.run("git push origin main",cwd=ruta_repositorio, check=True, shell=True)
 
-        return "Los cambios han sido commiteados y enviados al repositorio con éxito."
+        return "This model have been pushed to github correctly."
 
     except subprocess.CalledProcessError as e:
-        return f"Este modelo ya se encuentra en su repositorio de github"
+        return f"This model is already in your github repository."
 

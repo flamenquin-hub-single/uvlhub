@@ -10,7 +10,6 @@ from app.modules.auth.services import AuthenticationService
 from app.modules.profile.services import UserProfileService
 from flask_dance.contrib.github import make_github_blueprint, github
 
-from app.modules.dataset.repositories import DataSetRepository
 
 authentication_service = AuthenticationService()
 user_profile_service = UserProfileService()
@@ -78,9 +77,9 @@ def github_login():
        account_info = github.get('/user/repos')
        if account_info.ok:
            account_info_json = account_info.json()
-           return '<h1>Your github account is already sync with uvlhub</h1>'
+           return 'Your github account is already sync with uvlhub.'
 
-   return '<h1>Request failed!</h1>'
+   return 'Request failed!'
 
 
 @auth_bp.route('/invite', methods=['GET', 'POST'])
@@ -90,7 +89,7 @@ def invite_user():
     if account_info.ok:
         username = account_info.json()['login']
     else:
-        return '<h1>First sync your github account</h1>'
+        return 'First sync your github account.'
               
     url = f'https://api.github.com/orgs/uvlhub/invitations'  
     headers = {
@@ -114,17 +113,17 @@ def invite_user():
     response = requests.post(url, json=payload, headers=headers)
 
     if response.status_code == 201:
-        return f'Invitación enviada a {username} exitosamente. Debe aceptarla desde github y una vez pertenezca a nuestra organización no tenrá que repetir este proceso</h1>'
+        return f"Now {username} can join our github organization. Accept it in github. Once joined, you don't have to repeat this process."
         #return jsonify({"message": f"Invitación enviada a {username} exitosamente."}), 201
     
     elif response.status_code == 404:
-        return jsonify({"error": f"Usuario {username} no encontrado."}), 404
+        return jsonify({"error": f"Username {username} not found"}), 404
     
     elif response.status_code == 422:
-        return f'El usuario {username} ya pertenece a nuestra organización de github o tiene una invitación válida para unirse. Compruébelo desde github'
+        return f'User {username} already belongs to our github organization or have a valid invitation to join. You have to find out in github.'
     
     else:
-        return jsonify({"error": "No se pudo enviar la invitación", "details": response.json()}), response.status_code
+        return jsonify({"error": "Can't send the invitation", "details": response.json()}), response.status_code
     
 
 
@@ -136,7 +135,7 @@ def crear_repo():
     if account_info.ok:
         username = account_info.json()['login']
     else:
-        return '<h1>First sync your github account</h1>'
+        return 'First sync your github account.'
 
     comando = f"gh repo create uvlhub/{username} --public"
     url_repo = f"https://github.com/uvlhub/{username}.git"
@@ -147,8 +146,23 @@ def crear_repo():
         directory = f"/home/{os.getenv('USER')}/uvl_git/{username}"
         os.makedirs(directory, exist_ok=True)
         subprocess.run(f"git clone {url_repo} {directory}",cwd=directory, check=True, shell=True)
-        return f"Repositorio '{username}' creado exitosamente en la organización uvlhub."
+        return f"Repository '{username}' created in our github organization correctly."
     
     except subprocess.CalledProcessError as e:
-        return f"El repositorio '{username}' ya está creado. Ahora siempre que su cuenta esté sincronizada con github, puede subir desde uvlhub sus archivos a este repositorio."
+        
+        if e.returncode == 127:
+            return '''
+                The command 'gh' is not recognized. Please install GitHub CLI by following these steps in your command line:
+
+                    1. Update your package list:
+                sudo apt update
+                
+                    2. Install the GitHub CLI:
+                sudo apt install gh
+                
+                    3. You can verify the installation:
+                gh --version
+                '''
+        
+        return f"Repository '{username}' is already created. Now, always you are sync with github, you can push from here your datasets or models to github."
     
