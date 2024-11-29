@@ -65,7 +65,7 @@ jobs:
 
       - name: Deploy to Render
         env:
-          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL_DEVELOP }}
         run: |
           curl "$deploy_url"
       - name: Send Notification
