@@ -5,6 +5,10 @@ var currentId = 0;
             document.getElementById("upload_dataset").style.display = "block";
         }
 
+	function show_check_dataset() {
+		document.getElementById("check_dataset").style.display = "block";
+	}
+
         function generateIncrementalId() {
             return currentId++;
         }
@@ -81,13 +85,14 @@ var currentId = 0;
             return (titleLength >= 3 && descriptionLength >= 3);
         }
 
+	if (document.getElementById('add_author')) {
+		document.getElementById('add_author').addEventListener('click', function () {
+			let authors = document.getElementById('authors');
+			let newAuthor = createAuthorBlock(amount_authors++, "");
+			authors.appendChild(newAuthor);
+		});
 
-        document.getElementById('add_author').addEventListener('click', function () {
-            let authors = document.getElementById('authors');
-            let newAuthor = createAuthorBlock(amount_authors++, "");
-            authors.appendChild(newAuthor);
-        });
-
+	}        
 
         document.addEventListener('click', function (event) {
             if (event.target && event.target.classList.contains('add_author_to_uvl')) {
@@ -102,10 +107,14 @@ var currentId = 0;
             }
         });
 
-        function show_loading() {
-            document.getElementById("upload_button").style.display = "none";
-            document.getElementById("loading").style.display = "block";
-        }
+        function show_loading(type) {
+		if (type==="check") {
+			document.getElementById("check_model_button").style.display = "none";
+		} else {
+			document.getElementById("upload_button").style.display = "none";
+		}
+		document.getElementById("loading").style.display = "block";
+	}
 
         function hide_loading() {
             document.getElementById("upload_button").style.display = "block";
@@ -130,110 +139,146 @@ var currentId = 0;
 
         window.onload = function () {
 
-            test_zenodo_connection();
+		if (document.getElementById('check_model_button')) {
 
-            document.getElementById('upload_button').addEventListener('click', function () {
+			document.getElementById('check_model_button').addEventListener('click', function () {
+				console.log("hi");
+				clean_upload_errors();
+				show_loading("check");
 
-                clean_upload_errors();
-                show_loading();
+				
+				fetch('/dataset/check', {
+					method: 'POST',
+					body: ''
+				})
+					.then(response => {
+						if (response.ok) {
+							console.log('Dataset sent successfully');
+							response.json().then(data => {
+								console.log(data.message);
+								//window.location.href = "/dataset/list";
+							});
+						} else {
+							response.json().then(data => {
+								console.error('Error: ' + data.message);
+								hide_loading();
 
-                // check title and description
-                let check = check_title_and_description();
+								write_upload_error(data.message);
 
-                if (check) {
-                    // process data form
-                    const formData = {};
+							});
+						}
+					})
+					.catch(error => {
+						console.error('Error in POST request:', error);
+					});
+				console.log("yeah")
 
-                    ["basic_info_form", "uploaded_models_form"].forEach((formId) => {
-                        const form = document.getElementById(formId);
-                        const inputs = form.querySelectorAll('input, select, textarea');
-                        inputs.forEach(input => {
-                            if (input.name) {
-                                formData[input.name] = formData[input.name] || [];
-                                formData[input.name].push(input.value);
-                            }
-                        });
-                    });
+			});
+		}
+		if (document.getElementById('upload_button')){
+			document.getElementById('upload_button').addEventListener('click', function () {
 
-                    let formDataJson = JSON.stringify(formData);
-                    console.log(formDataJson);
+				clean_upload_errors();
+				show_loading("upload");
 
-                    const csrfToken = document.getElementById('csrf_token').value;
-                    const formUploadData = new FormData();
-                    formUploadData.append('csrf_token', csrfToken);
+				// check title and description
+				let check = check_title_and_description();
 
-                    for (let key in formData) {
-                        if (formData.hasOwnProperty(key)) {
-                            formUploadData.set(key, formData[key]);
-                        }
-                    }
+				if (check) {
+					// process data form
+					const formData = {};
 
-                    let checked_orcid = true;
-                    if (Array.isArray(formData.author_orcid)) {
-                        for (let orcid of formData.author_orcid) {
-                            orcid = orcid.trim();
-                            if (orcid !== '' && !isValidOrcid(orcid)) {
-                                hide_loading();
-                                write_upload_error("ORCID value does not conform to valid format: " + orcid);
-                                checked_orcid = false;
-                                break;
-                            }
-                        }
-                    }
+					["basic_info_form", "uploaded_models_form"].forEach((formId) => {
+						const form = document.getElementById(formId);
+						const inputs = form.querySelectorAll('input, select, textarea');
+						inputs.forEach(input => {
+							if (input.name) {
+								formData[input.name] = formData[input.name] || [];
+								formData[input.name].push(input.value);
+							}
+						});
+					});
 
+					let formDataJson = JSON.stringify(formData);
+					console.log(formDataJson);
 
-                    let checked_name = true;
-                    if (Array.isArray(formData.author_name)) {
-                        for (let name of formData.author_name) {
-                            name = name.trim();
-                            if (name === '') {
-                                hide_loading();
-                                write_upload_error("The author's name cannot be empty");
-                                checked_name = false;
-                                break;
-                            }
-                        }
-                    }
+					const csrfToken = document.getElementById('csrf_token').value;
+					const formUploadData = new FormData();
+					formUploadData.append('csrf_token', csrfToken);
 
+					for (let key in formData) {
+						if (formData.hasOwnProperty(key)) {
+							formUploadData.set(key, formData[key]);
+						}
+					}
 
-                    if (checked_orcid && checked_name) {
-                        fetch('/dataset/upload', {
-                            method: 'POST',
-                            body: formUploadData
-                        })
-                            .then(response => {
-                                if (response.ok) {
-                                    console.log('Dataset sent successfully');
-                                    response.json().then(data => {
-                                        console.log(data.message);
-                                        window.location.href = "/dataset/list";
-                                    });
-                                } else {
-                                    response.json().then(data => {
-                                        console.error('Error: ' + data.message);
-                                        hide_loading();
-
-                                        write_upload_error(data.message);
-
-                                    });
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error in POST request:', error);
-                            });
-                    }
+					let checked_orcid = true;
+					if (Array.isArray(formData.author_orcid)) {
+						for (let orcid of formData.author_orcid) {
+							orcid = orcid.trim();
+							if (orcid !== '' && !isValidOrcid(orcid)) {
+								hide_loading();
+								write_upload_error("ORCID value does not conform to valid format: " + orcid);
+								checked_orcid = false;
+								break;
+							}
+						}
+					}
 
 
-                } else {
-                    hide_loading();
-                }
+					let checked_name = true;
+					if (Array.isArray(formData.author_name)) {
+						for (let name of formData.author_name) {
+							name = name.trim();
+							if (name === '') {
+								hide_loading();
+								write_upload_error("The author's name cannot be empty");
+								checked_name = false;
+								break;
+							}
+						}
+					}
 
 
-            });
-        };
+					if (checked_orcid && checked_name) {
+						fetch('/dataset/upload', {
+							method: 'POST',
+							body: formUploadData
+						})
+							.then(response => {
+								if (response.ok) {
+									console.log('Dataset sent successfully');
+									response.json().then(data => {
+										console.log(data.message);
+										window.location.href = "/dataset/list";
+									});
+								} else {
+									response.json().then(data => {
+										console.error('Error: ' + data.message);
+										hide_loading();
+
+										write_upload_error(data.message);
+
+									});
+								}
+							})
+							.catch(error => {
+								console.error('Error in POST request:', error);
+							});
+					}
 
 
-        function isValidOrcid(orcid) {
-            let orcidRegex = /^\d{4}-\d{4}-\d{4}-\d{4}$/;
-            return orcidRegex.test(orcid);
-        }
+				} else {
+					hide_loading();
+				}
+
+
+			});
+		}
+	};
+
+
+function isValidOrcid(orcid) {
+	let orcidRegex = /^\d{4}-\d{4}-\d{4}-\d{4}$/;
+	return orcidRegex.test(orcid);
+}
