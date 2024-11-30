@@ -1,4 +1,4 @@
-name: Deploy to Render
+name: Deploy develop branch to Render
 
 on:
     push:
@@ -6,7 +6,7 @@ on:
       - 'v*' 
     pull_request:
       branches:
-        - main
+        - develop
 
 jobs:
 
