@@ -48,5 +48,4 @@ jobs:
         MARIADB_PASSWORD: uvlhub_password
         ORG_TOKEN_ADMIN: ${{ secrets.ORG_TOKEN_ADMIN }}
       run: |
-        pytest app/modules/ --ignore-glob='*selenium*'
-        
+        pytest --cov=app/modules --cov-report=term-missing --ignore-glob='*selenium*'
