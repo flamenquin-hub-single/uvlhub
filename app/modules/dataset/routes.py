@@ -305,7 +305,6 @@ def subdomain_index(doi):
     
     lineas_preview ="@misc{MiscUvl" + ds_meta_data.title.replace(" ", "") + ",\n  "
     lineas_preview += "\n  ".join([k_ + " = {" + v_+ "}," for (k_,v_) in bibtex_propiedades.items()]) + "\n}"
-    # lineas_preview += ",\n  ".join([k_ + " = {" + v_+ "}" for (k_,v_) in bibtex_propiedades.items()]) + "\n}"
 
     bibtex_file_name = ds_meta_data.title.replace(" ", "_").lower() + ".bib"
 
@@ -327,5 +326,23 @@ def get_unsynchronized_dataset(dataset_id):
 
     if not dataset:
         abort(404)
+    
+    ds_meta_data = dsmetadata_service.get_by_id(dataset.ds_meta_data_id)
 
-    return render_template("dataset/view_dataset.html", dataset=dataset)
+    bibtex_propiedades = {
+        "author": " and ".join([a_.name for a_ in ds_meta_data.authors]),
+        "title": ds_meta_data.title,
+        "howpublished": None,
+        "year": str(dataset.created_at.date().year),
+        "note": "Accessed: {}".format(str(datetime.now().date())),
+        "annote": ds_meta_data.description
+    }
+    texto_howpublished = "https://zenodo.org/records/{}" if os.environ.get("FLASK_ENV").lower()=="production" else "https://sandbox.zenodo.org/records/{}"
+    bibtex_propiedades["howpublished"] = texto_howpublished.format(ds_meta_data.deposition_id)
+    
+    lineas_preview ="@misc{MiscUvl" + ds_meta_data.title.replace(" ", "") + ",\n  "
+    lineas_preview += "\n  ".join([k_ + " = {" + v_+ "}," for (k_,v_) in bibtex_propiedades.items()]) + "\n}"
+
+    bibtex_file_name = ds_meta_data.title.replace(" ", "_").lower() + ".bib"
+
+    return render_template("dataset/view_dataset.html", dataset=dataset,bibtex_dataset=lineas_preview,bibtex_file_name=bibtex_file_name)
