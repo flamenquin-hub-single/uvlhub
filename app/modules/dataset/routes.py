@@ -374,8 +374,8 @@ def commit(dataset_id):
         
         for archivo in all_files:
             
-            ruta_archivo_origen = f"/home/javier/uvlhub/app/modules/dataset/uvl_examples/{archivo.name}"
-            #ruta_archivo_origen = archivo.get_path()
+            #ruta_archivo_origen = f"/home/javier/uvlhub/app/modules/dataset/uvl_examples/{archivo.name}"
+            ruta_archivo_origen = archivo.get_path()
             ruta_destino_archivo = os.path.join(ruta_carpeta, os.path.basename(ruta_archivo_origen))
             shutil.copy(ruta_archivo_origen, ruta_destino_archivo)
             subprocess.run(f"git add {ruta_carpeta}/{archivo.name}",cwd=ruta_repositorio, check=True, shell=True)
@@ -406,8 +406,8 @@ def commit_file(file_id):
  
         hubfile_repository = HubfileRepository()
         hubfile = hubfile_repository.get_hubfile_by_id(file_id)
-        #ruta_archivo_origen = hubfile.get_path()
-        ruta_archivo_origen = f"/home/javier/uvlhub/app/modules/dataset/uvl_examples/{hubfile.name}"
+        ruta_archivo_origen = hubfile.get_path()
+        #ruta_archivo_origen = f"/home/javier/uvlhub/app/modules/dataset/uvl_examples/{hubfile.name}"
         ruta_destino_archivo = os.path.join(ruta_repositorio, hubfile.name)
         shutil.copy(ruta_archivo_origen, ruta_destino_archivo)
         subprocess.run(f"git add {ruta_repositorio}/{hubfile.name}",cwd=ruta_repositorio, check=True, shell=True)
