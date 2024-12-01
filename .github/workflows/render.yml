@@ -2,8 +2,8 @@ name: Deploy develop branch to Render
 
 on:
     push:
-      tags:
-      - 'v*' 
+      branches:
+        - develop
     pull_request:
       branches:
         - develop
@@ -60,8 +60,6 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
-        with:
-          ref: 'develop'
 
       - name: Deploy to Render
         env:
