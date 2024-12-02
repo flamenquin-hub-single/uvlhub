@@ -66,16 +66,4 @@ jobs:
           deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL_DEVELOP }}
         run: |
           curl "$deploy_url"
-      - name: Send Notification
-        if: always()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"Deployment completed successfully!"}' $SLACK_WEBHOOK_URL
-      - name: Send Deployment Failure Notification
-        if: failure()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"Deployment failed!"}' $SLACK_WEBHOOK_URL
       
