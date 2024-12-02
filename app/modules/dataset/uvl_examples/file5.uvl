@@ -1,19 +1,34 @@
 features
-    Chat
-        mandatory
-            Connection
-                alternative
-                    "Peer 2 Peer"
-                    Server
-            Messages
-                or
-                    Text
-                    Video
-                    Audio
-        optional
-            "Data Storage"
-            "Media Player"
-
-constraints
-    Server => "Data Storage"
-    Video | Audio => "Media Player"
+	SmartWatch {abstract true}
+		optional
+			Screen
+				mandatory
+					OLED
+						mandatory
+							CapacityButton
+		mandatory
+			Functionalities {abstract true}
+				mandatory
+					FitnessMonitor
+					SleepTracker
+					VibrateAlert
+						mandatory
+							Call
+							Notification
+			Sensors {abstract true}
+				mandatory
+					Pedometer
+						optional
+							MovementFilter
+					Accelerometer
+				optional
+					HeartRateSensor
+			Connectivity {abstract true}
+				mandatory
+					Bluetooth
+						alternative
+							BLE {abstract true}
+								alternative
+									BLEv40
+									BLEv42
+							BT40
