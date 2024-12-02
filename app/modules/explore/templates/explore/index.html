@@ -54,6 +54,35 @@
                                        value="" autofocus>
                             </div>
                         </div>
+                        <div class="col-lg-12">
+                            <div class="mb-3">
+                                <label class="form-label" for="publication_type">Filter by publication
+                                    type</label>
+                                <select class="form-control" id="publication_type" name="publication_type"
+                                        required="">
+                                    <option value="any">Any</option>
+                                    <option value="none">None</option>
+                                    <option value="annotationcollection">Annotation Collection</option>
+                                    <option value="book">Book</option>
+                                    <option value="section">Book Section</option>
+                                    <option value="conferencepaper">Conference Paper</option>
+                                    <option value="datamanagementplan">Data Management Plan</option>
+                                    <option value="article">Journal Article</option>
+                                    <option value="patent">Patent</option>
+                                    <option value="preprint">Preprint</option>
+                                    <option value="deliverable">Project Deliverable</option>
+                                    <option value="milestone">Project Milestone</option>
+                                    <option value="proposal">Proposal</option>
+                                    <option value="report">Report</option>
+                                    <option value="softwaredocumentation">Software Documentation</option>
+                                    <option value="taxonomictreatment">Taxonomic Treatment</option>
+                                    <option value="technicalnote">Technical Note</option>
+                                    <option value="thesis">Thesis</option>
+                                    <option value="workingpaper">Working Paper</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
                         <div class="row">
                             <div class="col-lg-6">
                                 <div class="mb-3">
@@ -115,33 +144,17 @@
                         </div>
                         <div class="col-lg-12">
                             <div class="mb-3">
-                                <label class="form-label" for="publication_type">Filter by publication
-                                    type</label>
-                                <select class="form-control" id="publication_type" name="publication_type"
-                                        required="">
-                                    <option value="any">Any</option>
-                                    <option value="none">None</option>
-                                    <option value="annotationcollection">Annotation Collection</option>
-                                    <option value="book">Book</option>
-                                    <option value="section">Book Section</option>
-                                    <option value="conferencepaper">Conference Paper</option>
-                                    <option value="datamanagementplan">Data Management Plan</option>
-                                    <option value="article">Journal Article</option>
-                                    <option value="patent">Patent</option>
-                                    <option value="preprint">Preprint</option>
-                                    <option value="deliverable">Project Deliverable</option>
-                                    <option value="milestone">Project Milestone</option>
-                                    <option value="proposal">Proposal</option>
-                                    <option value="report">Report</option>
-                                    <option value="softwaredocumentation">Software Documentation</option>
-                                    <option value="taxonomictreatment">Taxonomic Treatment</option>
-                                    <option value="technicalnote">Technical Note</option>
-                                    <option value="thesis">Thesis</option>
-                                    <option value="workingpaper">Working Paper</option>
-                                    <option value="other">Other</option>
-                                </select>
+                                <label class="form-label" for="leaf_feature_name">Leaf Feature Name:</label>
+                                <input type="text" id="leaf_feature_name" name="leaf_feature_name" class="form-control" 
+                                       placeholder="Enter leaf feature name">
                             </div>
-
+                        </div>
+                        <div class="col-lg-12">
+                            <div class="mb-3">
+                                <label class="form-label" for="core_feature_name">Core Feature Name:</label>
+                                <input type="text" id="core_feature_name" name="core_feature_name" class="form-control" 
+                                       placeholder="Enter core feature name">
+                            </div>
                         </div>
 
                     </div>
@@ -166,7 +179,20 @@
                                     </span>
                                 </label>
                             </div>
-                            
+                            <div>
+                                <label class="form-check">
+                                    <input class="form-check-input" type="radio" value="filesize_asc" name="sorting">
+                                    <span class="form-check-label">
+                                        Smallest first
+                                    </span>
+                                </label>
+                                <label class="form-check">
+                                    <input class="form-check-input" type="radio" value="filesize_desc" name="sorting">
+                                    <span class="form-check-label">
+                                        Largest first
+                                    </span>
+                                </label>
+                            </div>
                         </div>
 
                     </div>

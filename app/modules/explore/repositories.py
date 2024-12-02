@@ -16,6 +16,7 @@ class ExploreRepository(BaseRepository):
                min_leaf_count=None, max_leaf_count=None,
                min_depth=None, max_depth=None,
                min_av_branching_factor=None, max_av_branching_factor=None,
+               leaf_feature_name="", core_feature_name="",
                **kwargs):
         # Normalize and remove unwanted characters
         normalized_query = unidecode.unidecode(query).lower()
@@ -73,10 +74,14 @@ class ExploreRepository(BaseRepository):
         # Order by created_at
         if sorting == "oldest":
             datasets = datasets.order_by(self.model.created_at.asc())
+        elif sorting == "filesize_asc":
+            datasets = datasets.all()
+            datasets = sorted(datasets, key=lambda ds: ds.get_file_total_size(), reverse=False)
+        elif sorting == "filesize_desc":
+            datasets = datasets.all()
+            datasets = sorted(datasets, key=lambda ds: ds.get_file_total_size(), reverse=True)
         else:
             datasets = datasets.order_by(self.model.created_at.desc())
-
-        datasets = datasets.all()
 
         if min_files is not None:
             datasets = [dataset for dataset in datasets if dataset.get_files_count() >= min_files]
@@ -94,7 +99,6 @@ class ExploreRepository(BaseRepository):
                 leaf_count = stats["leaf_count"]
                 depth = stats["max_depth"]
                 branching_factor = stats["branching_factor"]
-                print(dataset_passes_filter)
 
                 # Aplicar filtros a las estadísticas del modelo
                 if ((min_leaf_count is not None and leaf_count < min_leaf_count) or
@@ -104,6 +108,17 @@ class ExploreRepository(BaseRepository):
                     (min_av_branching_factor is not None and branching_factor < min_av_branching_factor) or
                         (max_av_branching_factor is not None and branching_factor > max_av_branching_factor)):
                     continue
+
+                if leaf_feature_name:
+                    leaf_feature_names = model.get_leaf_feature_names()
+                    print(leaf_feature_name)
+                    if leaf_feature_name not in leaf_feature_names:
+                        continue
+
+                if core_feature_name:
+                    core_feature_names = model.get_core_feature_names()
+                    if core_feature_name not in core_feature_names:
+                        continue
 
                 dataset_passes_filter = True
                 print("dataset_passes_filter")

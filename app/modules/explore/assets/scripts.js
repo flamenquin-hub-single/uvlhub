@@ -24,7 +24,6 @@ function send_query() {
             const maxLeafCount = document.getElementById('max_leaf_count').value || null;
             const minDepth = document.getElementById('min_depth').value || null;
             const maxDepth = document.getElementById('max_depth').value || null;
-
             const searchCriteria = {
                 csrf_token: csrfToken,
                 query: document.querySelector('#query').value,
@@ -37,7 +36,9 @@ function send_query() {
                 min_leaf_count: minLeafCount,
                 max_leaf_count: maxLeafCount,
                 min_depth: minDepth,
-                max_depth: maxDepth
+                max_depth: maxDepth,
+                leaf_feature_name: document.querySelector('#leaf_feature_name').value,
+                core_feature_name: document.querySelector('#core_feature_name').value
             };
             
             console.log(document.querySelector('#publication_type').value);
@@ -212,6 +213,10 @@ function clearFilters() {
     let maxDepth = document.querySelector('#max_depth');
     minDepth.value = ""; 
     maxDepth.value = ""; 
+    let leafFeatureName = document.querySelector('#leaf_feature_name');
+    leafFeatureName.value = "";
+    let coreFeatureName = document.querySelector('#core_feature_name');
+    coreFeatureName.value = "";
 
 
     // Perform a new search with the reset filters
