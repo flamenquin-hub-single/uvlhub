@@ -1,12 +1,12 @@
-name: Deploy to Render
+name: Deploy develop branch to Render
 
 on:
     push:
-      tags:
-      - 'v*' 
+      branches:
+        - develop
     pull_request:
       branches:
-        - main
+        - develop
 
 jobs:
 
@@ -60,8 +60,6 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
-        with:
-          ref: 'develop'
 
       - name: Deploy to Render
         env:
@@ -69,16 +67,4 @@ jobs:
           ORG_TOKEN_ADMIN: ${{ secrets.ORG_TOKEN_ADMIN }}
         run: |
           curl "$deploy_url"
-      - name: Send Notification
-        if: always()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"Deployment completed successfully!"}' $SLACK_WEBHOOK_URL
-      - name: Send Deployment Failure Notification
-        if: failure()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"Deployment failed!"}' $SLACK_WEBHOOK_URL
       

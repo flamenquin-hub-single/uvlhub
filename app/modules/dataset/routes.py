@@ -297,42 +297,27 @@ def subdomain_index(doi):
 
 
     # Export DataSet to BibTex
-    closing_ = "},"
-    bibtex_properties = ["@misc{MiscUvl" + ds_meta_data.title.replace(" ", "") + ","]
-    bibtex_properties.append("  author = {" + " and ".join([a_.name for a_ in ds_meta_data.authors]) + closing_)
-    bibtex_properties.append("  title = {" + ds_meta_data.title + closing_)
     
-    if os.environ.get("FLASK_ENV").lower()=="production":
-        bibtex_properties.append("  howpublished = {https://zenodo.org/records/" + str(ds_meta_data.deposition_id) + closing_)
-    else:
-        bibtex_properties.append("  howpublished = {https://sandbox.zenodo.org/records/" + str(ds_meta_data.deposition_id) + closing_)
-    bibtex_properties.append("  year = {" + str(dataset.created_at.date().year) + closing_)
-    bibtex_properties.append("  note = {Accessed: " + str(datetime.now().date()) + closing_) #opcional
-    bibtex_properties.append("  annote = {" + ds_meta_data.description + closing_) #opcional
+    bibtex_propiedades = {
+        "author": " and ".join([a_.name for a_ in ds_meta_data.authors]),
+        "title": ds_meta_data.title,
+        "howpublished": None,
+        "year": str(dataset.created_at.date().year),
+        "note": "Accessed: {}".format(str(datetime.now().date())),
+        "annote": ds_meta_data.description
+    }
+    texto_howpublished = "https://zenodo.org/records/{}" if os.environ.get("FLASK_ENV").lower()=="production" else "https://sandbox.zenodo.org/records/{}"
+    bibtex_propiedades["howpublished"] = texto_howpublished.format(ds_meta_data.deposition_id)
+    
+    lineas_preview ="@misc{MiscUvl" + ds_meta_data.title.replace(" ", "") + ",\n  "
+    lineas_preview += "\n  ".join([k_ + " = {" + v_+ "}," for (k_,v_) in bibtex_propiedades.items()]) + "\n}"
 
-    bibtex_properties[-1] = bibtex_properties[-1][:-1]
-    bibtex_properties.append("}")
-    bibtex_dataset = "\n".join(bibtex_properties)
-    
-    max_preview_len = 60
-    bibtex_preview = bibtex_dataset if len(bibtex_dataset)<=max_preview_len else bibtex_dataset[:max_preview_len] + " ..."
+    bibtex_file_name = ds_meta_data.title.replace(" ", "_").lower() + ".bib"
 
     # Save the cookie to the user's browser
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
-    
-    n_px = 17*(int(len(bibtex_properties)/2)+1)
 
-    page_render = render_template("dataset/view_dataset.html",
-                    dataset=dataset,
-                    bibtex_dataset=bibtex_dataset,
-                    bibtex_preview=bibtex_preview,
-                    bibtex_preview_start = bibtex_properties[0],
-                    bibtex_preview_lines=bibtex_properties[1:-1],
-                    bibtex_preview_end = bibtex_properties[-1]).replace('id="boton_exportar_bibtex">',
-                    'id="boton_exportar_bibtex" style="padding-top: {}px;padding-bottom: {}px;">'.format(n_px, n_px), 1)
-
-    resp = make_response(page_render)
-    # resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset))
+    resp = make_response(render_template("dataset/view_dataset.html",dataset=dataset,bibtex_dataset=lineas_preview,bibtex_file_name=bibtex_file_name))
     resp.set_cookie("view_cookie", user_cookie)
 
     return resp
@@ -347,7 +332,25 @@ def get_unsynchronized_dataset(dataset_id):
 
     if not dataset:
         abort(404)
+    
+    ds_meta_data = dsmetadata_service.get_by_id(dataset.ds_meta_data_id)
 
+    bibtex_propiedades = {
+        "author": " and ".join([a_.name for a_ in ds_meta_data.authors]),
+        "title": ds_meta_data.title,
+        "howpublished": None,
+        "year": str(dataset.created_at.date().year),
+        "note": "Accessed: {}".format(str(datetime.now().date())),
+        "annote": ds_meta_data.description
+    }
+    texto_howpublished = "https://zenodo.org/records/{}" if os.environ.get("FLASK_ENV").lower()=="production" else "https://sandbox.zenodo.org/records/{}"
+    bibtex_propiedades["howpublished"] = texto_howpublished.format(ds_meta_data.deposition_id)
+    
+    lineas_preview ="@misc{MiscUvl" + ds_meta_data.title.replace(" ", "") + ",\n  "
+    lineas_preview += "\n  ".join([k_ + " = {" + v_+ "}," for (k_,v_) in bibtex_propiedades.items()]) + "\n}"
+
+    bibtex_file_name = ds_meta_data.title.replace(" ", "_").lower() + ".bib"
+   
     return render_template("dataset/view_dataset.html", dataset=dataset)
 
 
@@ -420,3 +423,4 @@ def commit_file(file_id):
     except subprocess.CalledProcessError as e:
         return f"This model is already in your github repository."
 
+    return render_template("dataset/view_dataset.html", dataset=dataset,bibtex_dataset=lineas_preview,bibtex_file_name=bibtex_file_name)
