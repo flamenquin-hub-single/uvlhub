@@ -351,7 +351,7 @@ def get_unsynchronized_dataset(dataset_id):
 
     bibtex_file_name = ds_meta_data.title.replace(" ", "_").lower() + ".bib"
    
-    return render_template("dataset/view_dataset.html", dataset=dataset)
+    return render_template("dataset/view_dataset.html", dataset=dataset,bibtex_dataset=lineas_preview,bibtex_file_name=bibtex_file_name)
 
 
 @dataset_bp.route('/dataset/commit/<int:dataset_id>', methods=['GET','POST'])
@@ -423,4 +423,3 @@ def commit_file(file_id):
     except subprocess.CalledProcessError as e:
         return f"This model is already in your github repository."
 
-    return render_template("dataset/view_dataset.html", dataset=dataset,bibtex_dataset=lineas_preview,bibtex_file_name=bibtex_file_name)
