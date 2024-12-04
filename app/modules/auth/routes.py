@@ -107,9 +107,12 @@ def invite_user():
     if user_response.status_code == 200:
         user_id = user_response.json().get("id")
         payload["invitee_id"] = user_id  
-    else:
+        
+    elif user_response.status_code == 404:
         return jsonify({"error": f"Can't find the user: {username}"}), 404
-
+    else:
+        return jsonify({"error": f"Something went wrong"}), user_response.status_code
+        
     response = requests.post(url, json=payload, headers=headers)
 
     if response.status_code == 201:
