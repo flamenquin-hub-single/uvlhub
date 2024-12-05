@@ -400,6 +400,9 @@ def commit_file(file_id):
     
     if account_info.ok:
         username = account_info.json()['login']
+        name = account_info.json().get('name') or "Unknown Name"
+        email = account_info.json().get('email') or "unknown@example.com"
+        
     else:
         return 'First sync your github account.'
     
@@ -407,6 +410,9 @@ def commit_file(file_id):
        
         ruta_repositorio = f"/app/uvl_git/{username}"
  
+        subprocess.run(f"git config user.name {name}", cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run(f"git config user.email {email}", cwd=ruta_repositorio, check=True, shell=True)
+
         hubfile_repository = HubfileRepository()
         hubfile = hubfile_repository.get_hubfile_by_id(file_id)
         ruta_archivo_origen = hubfile.get_path()
