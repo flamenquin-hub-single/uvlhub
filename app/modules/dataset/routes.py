@@ -409,22 +409,28 @@ def commit_file(file_id):
     try:
        
         ruta_repositorio = f"/app/uvl_git/{username}"
- 
-        subprocess.run(f"git config user.name {name}", cwd=ruta_repositorio, check=True, shell=True)
-        subprocess.run(f"git config user.email {email}", cwd=ruta_repositorio, check=True, shell=True)
+    
+        # Configurar usuario de Git
+        subprocess.run(f"git config user.name '{name}'", cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run(f"git config user.email '{email}'", cwd=ruta_repositorio, check=True, shell=True)
 
+        # Configurar URL remota con el PAT
+        token = os.getenv('GITHUB_PAT')  # Asegúrate de configurar esta variable en tu entorno de despliegue
+        repo_url = f"https://{token}@github.com/uvlhub/{username}.git"
+        subprocess.run(f"git remote set-url origin {repo_url}", cwd=ruta_repositorio, check=True, shell=True)
+
+        # Obtener archivo y hacer commit
         hubfile_repository = HubfileRepository()
         hubfile = hubfile_repository.get_hubfile_by_id(file_id)
         ruta_archivo_origen = hubfile.get_path()
-        #ruta_archivo_origen = f"/home/javier/uvlhub/app/modules/dataset/uvl_examples/{hubfile.name}"
         ruta_destino_archivo = os.path.join(ruta_repositorio, hubfile.name)
         shutil.copy(ruta_archivo_origen, ruta_destino_archivo)
-        subprocess.run(f"git add {ruta_repositorio}/{hubfile.name}",cwd=ruta_repositorio, check=True, shell=True)
-            
-        subprocess.run('git commit -m "Commit realizado desde uvlhub"',cwd=ruta_repositorio, check=True, shell=True)
-        subprocess.run("git push origin main",cwd=ruta_repositorio, check=True, shell=True)
 
-        return "This model have been pushed to github correctly."
+        subprocess.run(f"git add {hubfile.name}", cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run('git commit -m "Commit realizado desde uvlhub"', cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run("git push origin main", cwd=ruta_repositorio, check=True, shell=True)
+
+        return "This model has been pushed to GitHub correctly."
 
     except subprocess.CalledProcessError as e:
         return f"This model is already in your github repository."
