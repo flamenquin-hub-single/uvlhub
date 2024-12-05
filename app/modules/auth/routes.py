@@ -72,7 +72,7 @@ def logout():
 def github_login():
     
    if not github.authorized:
-       return redirect(url_for('github.login'))
+        return redirect(url_for('github.login'))
    else:
        account_info = github.get('/user/repos')
        if account_info.ok:
