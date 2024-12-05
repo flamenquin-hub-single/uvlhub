@@ -361,13 +361,23 @@ def commit(dataset_id):
     
     if account_info.ok:
         username = account_info.json()['login']
+        name = account_info.json().get('name') or "Unknown Name"
+        email = account_info.json().get('email') or "unknown@example.com"
     else:
         return 'First sync your github account.'
     
     try:
             
         ruta_repositorio = f"/app/uvl_git/{username}"   
+        
+        subprocess.run(f"git config user.name '{name}'", cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run(f"git config user.email '{email}'", cwd=ruta_repositorio, check=True, shell=True)
+        
+        token = os.getenv('GITHUB_PAT')
+        repo_url = f"https://{token}@github.com/uvlhub/{username}.git"
+        subprocess.run(f"git remote set-url origin {repo_url}", cwd=ruta_repositorio, check=True, shell=True)
              
+        # Obtener el nombre y los archivos del dataset
         repository = DataSetRepository()
         nombre = repository.get_dataset_name(dataset_id)
         ruta_carpeta = os.path.join(ruta_repositorio, nombre)
@@ -375,18 +385,19 @@ def commit(dataset_id):
         
         all_files = repository.get_all_files_for_dataset(dataset_id)
         
+        # Copiar archivos y añadirlos al commit
         for archivo in all_files:
-            
-            #ruta_archivo_origen = f"/home/javier/uvlhub/app/modules/dataset/uvl_examples/{archivo.name}"
             ruta_archivo_origen = archivo.get_path()
             ruta_destino_archivo = os.path.join(ruta_carpeta, os.path.basename(ruta_archivo_origen))
             shutil.copy(ruta_archivo_origen, ruta_destino_archivo)
-            subprocess.run(f"git add {ruta_carpeta}/{archivo.name}",cwd=ruta_repositorio, check=True, shell=True)
-            
-        subprocess.run('git commit -m "Commit realizado desde uvlhub"',cwd=ruta_repositorio, check=True, shell=True)
-        subprocess.run("git push origin main",cwd=ruta_repositorio, check=True, shell=True)
+            subprocess.run(f"git add {os.path.relpath(ruta_destino_archivo, ruta_repositorio)}", cwd=ruta_repositorio, check=True, shell=True)
+        
+        # Realizar el commit y el push
+        subprocess.run('git commit -m "Commit realizado desde uvlhub"', cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run("git push origin main", cwd=ruta_repositorio, check=True, shell=True)
 
-        return "Dataset have been pushed to github correctly."
+        return "Dataset has been pushed to GitHub correctly."
+
 
     except subprocess.CalledProcessError as e:
         return f"This dataset is already in your github repository."
