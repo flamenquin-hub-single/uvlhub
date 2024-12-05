@@ -366,8 +366,8 @@ def commit(dataset_id):
     
     try:
             
-        ruta_repositorio = f"/home/{os.getenv('USER')}/uvl_git/{username}"
-        
+        ruta_repositorio = f"/app/uvl_git/{username}"   
+             
         repository = DataSetRepository()
         nombre = repository.get_dataset_name(dataset_id)
         ruta_carpeta = os.path.join(ruta_repositorio, nombre)
@@ -405,7 +405,7 @@ def commit_file(file_id):
     
     try:
        
-        ruta_repositorio = f"/home/{os.getenv('USER')}/uvl_git/{username}"
+        ruta_repositorio = f"/app/uvl_git/{username}"
  
         hubfile_repository = HubfileRepository()
         hubfile = hubfile_repository.get_hubfile_by_id(file_id)

@@ -146,7 +146,7 @@ def crear_repo():
     try:
         
         subprocess.run(comando, check=True, shell=True)
-        directory = f"/home/{os.getenv('USER')}/uvl_git/{username}"
+        directory = f"/app/uvl_git/{username}"
         os.makedirs(directory, exist_ok=True)
         subprocess.run(f"git clone {url_repo} {directory}",cwd=directory, check=True, shell=True)
         return f"Repository '{username}' created in our github organization correctly."
