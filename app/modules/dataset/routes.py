@@ -18,7 +18,6 @@ from flask import (
     url_for,
 )
 from flask_login import login_required, current_user
-
 from app.modules.dataset.forms import DataSetForm
 from app.modules.dataset.models import (
     DSDownloadRecord
@@ -33,7 +32,7 @@ from app.modules.dataset.services import (
     DOIMappingService
 )
 from app.modules.zenodo.services import ZenodoService
-
+from app.modules.dataset.parser import get_tree
 logger = logging.getLogger(__name__)
 
 
@@ -129,12 +128,20 @@ def check_dataset():
         
         filename = os.listdir(temp_folder)[0]
         file_path = os.path.join(temp_folder, filename)
-        
+        message = None
+        try:
+            get_tree(file_path)
+        except Exception as e:
+            message = e
+
         with open(file_path) as f:
-            indent = 0
             x = "".join([i for i in f])
-            print(x)
-        return jsonify({"message": x}),200
+        context = {"message":x}
+        if message:
+            context["error"] = message
+        else:
+            context["error"] = "None"
+        return jsonify(context),200
    
     # setting things up for the checker to have only one file available
     temp_folder = current_user.temp_folder()
