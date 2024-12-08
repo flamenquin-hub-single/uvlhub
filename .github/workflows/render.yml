@@ -65,6 +65,8 @@ jobs:
         env:
           deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL_DEVELOP }}
           ORG_TOKEN_ADMIN: ${{ secrets.ORG_TOKEN_ADMIN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           curl "$deploy_url"
       
