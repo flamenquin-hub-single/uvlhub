@@ -373,7 +373,7 @@ def commit(dataset_id):
         subprocess.run(f"git config user.name '{name}'", cwd=ruta_repositorio, check=True, shell=True)
         subprocess.run(f"git config user.email '{email}'", cwd=ruta_repositorio, check=True, shell=True)
         
-        token = os.getenv('GITHUB_PAT')
+        token = os.getenv('GH_PAT')
         repo_url = f"https://{token}@github.com/uvlhub/{username}.git"
         subprocess.run(f"git remote set-url origin {repo_url}", cwd=ruta_repositorio, check=True, shell=True)
              
@@ -426,7 +426,7 @@ def commit_file(file_id):
         subprocess.run(f"git config user.email '{email}'", cwd=ruta_repositorio, check=True, shell=True)
 
         # Configurar URL remota con el PAT
-        token = os.getenv('GITHUB_PAT')  # Asegúrate de configurar esta variable en tu entorno de despliegue
+        token = os.getenv('GH_PAT')  # Asegúrate de configurar esta variable en tu entorno de despliegue
         repo_url = f"https://{token}@github.com/uvlhub/{username}.git"
         subprocess.run(f"git remote set-url origin {repo_url}", cwd=ruta_repositorio, check=True, shell=True)
 
