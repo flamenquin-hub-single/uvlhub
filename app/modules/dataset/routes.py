@@ -2,6 +2,7 @@ import logging
 import os
 import json
 import shutil
+import subprocess
 import tempfile
 import uuid
 from datetime import datetime, timezone
@@ -18,12 +19,14 @@ from flask import (
     url_for,
 )
 from flask_login import login_required, current_user
-
+import requests
+from app.modules.dataset.repositories import DSMetaDataRepository
 from app.modules.dataset.forms import DataSetForm
 from app.modules.dataset.models import (
     DSDownloadRecord
 )
 from app.modules.dataset import dataset_bp
+from app.modules.dataset.repositories import DataSetRepository
 from app.modules.dataset.services import (
     AuthorService,
     DSDownloadRecordService,
@@ -32,7 +35,10 @@ from app.modules.dataset.services import (
     DataSetService,
     DOIMappingService
 )
+from app.modules.hubfile.repositories import HubfileRepository
 from app.modules.zenodo.services import ZenodoService
+from flask_dance.contrib.github import github
+
 
 logger = logging.getLogger(__name__)
 
@@ -344,5 +350,99 @@ def get_unsynchronized_dataset(dataset_id):
     lineas_preview += "\n  ".join([k_ + " = {" + v_+ "}," for (k_,v_) in bibtex_propiedades.items()]) + "\n}"
 
     bibtex_file_name = ds_meta_data.title.replace(" ", "_").lower() + ".bib"
-
+   
     return render_template("dataset/view_dataset.html", dataset=dataset,bibtex_dataset=lineas_preview,bibtex_file_name=bibtex_file_name)
+
+
+@dataset_bp.route('/dataset/commit/<int:dataset_id>', methods=['GET','POST'])
+def commit(dataset_id):
+    
+    account_info = github.get('/user')
+    
+    if account_info.ok:
+        username = account_info.json()['login']
+        name = account_info.json().get('name') or "Unknown Name"
+        email = account_info.json().get('email') or "unknown@example.com"
+    else:
+        return 'First sync your github account.'
+    
+    try:
+            
+        ruta_repositorio = f"/app/uvl_git/{username}"   
+        
+        subprocess.run(f"git config user.name '{name}'", cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run(f"git config user.email '{email}'", cwd=ruta_repositorio, check=True, shell=True)
+        
+        token = os.getenv('GITHUB_PAT')
+        repo_url = f"https://{token}@github.com/uvlhub/{username}.git"
+        subprocess.run(f"git remote set-url origin {repo_url}", cwd=ruta_repositorio, check=True, shell=True)
+             
+        # Obtener el nombre y los archivos del dataset
+        repository = DataSetRepository()
+        nombre = repository.get_dataset_name(dataset_id)
+        ruta_carpeta = os.path.join(ruta_repositorio, nombre)
+        os.makedirs(ruta_carpeta, exist_ok=True)
+        
+        all_files = repository.get_all_files_for_dataset(dataset_id)
+        
+        # Copiar archivos y añadirlos al commit
+        for archivo in all_files:
+            ruta_archivo_origen = archivo.get_path()
+            ruta_destino_archivo = os.path.join(ruta_carpeta, os.path.basename(ruta_archivo_origen))
+            shutil.copy(ruta_archivo_origen, ruta_destino_archivo)
+            subprocess.run(f"git add {os.path.relpath(ruta_destino_archivo, ruta_repositorio)}", cwd=ruta_repositorio, check=True, shell=True)
+        
+        # Realizar el commit y el push
+        subprocess.run('git commit -m "Commit realizado desde uvlhub"', cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run("git push origin main", cwd=ruta_repositorio, check=True, shell=True)
+
+        return "Dataset has been pushed to GitHub correctly."
+
+
+    except subprocess.CalledProcessError as e:
+        return f"This dataset is already in your github repository."
+    
+    
+    
+@dataset_bp.route('/dataset/commit_file/<int:file_id>', methods=['GET','POST'])
+def commit_file(file_id):
+    
+    account_info = github.get('/user')
+    
+    if account_info.ok:
+        username = account_info.json()['login']
+        name = account_info.json().get('name') or "Unknown Name"
+        email = account_info.json().get('email') or "unknown@example.com"
+        
+    else:
+        return 'First sync your github account.'
+    
+    try:
+       
+        ruta_repositorio = f"/app/uvl_git/{username}"
+    
+        # Configurar usuario de Git
+        subprocess.run(f"git config user.name '{name}'", cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run(f"git config user.email '{email}'", cwd=ruta_repositorio, check=True, shell=True)
+
+        # Configurar URL remota con el PAT
+        token = os.getenv('GITHUB_PAT')  # Asegúrate de configurar esta variable en tu entorno de despliegue
+        repo_url = f"https://{token}@github.com/uvlhub/{username}.git"
+        subprocess.run(f"git remote set-url origin {repo_url}", cwd=ruta_repositorio, check=True, shell=True)
+
+        # Obtener archivo y hacer commit
+        hubfile_repository = HubfileRepository()
+        hubfile = hubfile_repository.get_hubfile_by_id(file_id)
+        ruta_archivo_origen = hubfile.get_path()
+        ruta_destino_archivo = os.path.join(ruta_repositorio, hubfile.name)
+        shutil.copy(ruta_archivo_origen, ruta_destino_archivo)
+
+        subprocess.run(f"git add {hubfile.name}", cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run('git commit -m "Commit realizado desde uvlhub"', cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run("git push origin main", cwd=ruta_repositorio, check=True, shell=True)
+
+        return "This model has been pushed to GitHub correctly."
+
+    except subprocess.CalledProcessError as e:
+        return f"This model is already in your github repository."
+

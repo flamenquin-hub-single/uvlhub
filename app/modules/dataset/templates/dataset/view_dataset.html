@@ -160,16 +160,23 @@
 
             {% if bibtex_dataset %}
 
-            <div class="card-body" style="padding-top: 0px">
+            <div class="card-body" style="padding-top: 0px; display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
                 <div id="dataset_bibtex_export" style="display: none">{{ bibtex_dataset }}</div>
                 <button onclick="viewBibtex('{{ bibtex_file_name }}')" class="btn btn-outline-secondary btn-sm" style="border-radius: 5px;">
                     <i data-feather="eye"></i> View dataset in BibTex format
                 </button>
+
+                <a href="{{ url_for('dataset.commit', dataset_id=dataset.id) }}" class="btn btn-primary mt-3" style="border-radius: 5px;">
+                    <i class="center-button-icon"></i>
+                    Upload dataset to github
+                </a>
             </div>
             {% endif %}
 
+            
+
             {% if dataset.ds_meta_data.dataset_doi %}
-            <div class="card-body" style="padding-top: 0px">
+            <div class="card-body" style="padding-top: 0px; display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
 
                 <div id="dataset_doi_uvlhub" style="display: none">
                     {{ dataset.get_uvlhub_doi() }}
@@ -188,6 +195,7 @@
                 <div id="dataset_doi_uvlhub" style="display: none">
                     {{ dataset.get_uvlhub_doi() }}
                 </div>
+
                 
             </div>
             {% endif %}
@@ -280,6 +288,10 @@
                                 
                             </div>
                             <div class="col-12 text-end" >
+
+                                <a href="{{ url_for('dataset.commit_file', file_id=file.id) }}" class="btn btn-outline-secondary btn-sm" style="border-radius: 5px;">
+                                    <i data-feather="github"></i> Upload
+                                </a>
 
                                 <button onclick="viewFile('{{ file.id }}')" class="btn btn-outline-secondary btn-sm" style="border-radius: 5px;">
                                     <i data-feather="eye"></i> View
