@@ -23,6 +23,9 @@ class HubfileRepository(BaseRepository):
 
     def get_dataset_by_hubfile(self, hubfile: Hubfile) -> DataSet:
         return db.session.query(DataSet).join(FeatureModel).join(Hubfile).filter(Hubfile.id == hubfile.id).first()
+    
+    def get_hubfile_by_id(self, hubfile_id: int) -> Hubfile:
+        return db.session.query(Hubfile).filter(Hubfile.id == hubfile_id).first()
 
 
 class HubfileViewRecordRepository(BaseRepository):

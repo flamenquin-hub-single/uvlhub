@@ -2,16 +2,19 @@ import logging
 import os
 import json
 import shutil
+import subprocess
 import tempfile
 import uuid
 from datetime import datetime, timezone
 from zipfile import ZipFile
 from flask import jsonify, redirect, url_for, render_template, request, send_from_directory, make_response, abort
 from flask_login import login_required, current_user
-
+import requests
+from app.modules.dataset.repositories import DSMetaDataRepository
 from app.modules.dataset.forms import DataSetForm
 from app.modules.dataset.models import DSDownloadRecord
 from app.modules.dataset import dataset_bp
+from app.modules.dataset.repositories import DataSetRepository
 from app.modules.dataset.services import (
     AuthorService,
     DSDownloadRecordService,
@@ -20,7 +23,10 @@ from app.modules.dataset.services import (
     DataSetService,
     DOIMappingService
 )
+from app.modules.hubfile.repositories import HubfileRepository
 from app.modules.zenodo.services import ZenodoService
+from flask_dance.contrib.github import github
+
 
 logger = logging.getLogger(__name__)
 
@@ -243,42 +249,27 @@ def subdomain_index(doi):
     dataset = ds_meta_data.data_set
     
     # Export DataSet to BibTex
-    closing_ = "},"
-    bibtex_properties = ["@misc{MiscUvl" + ds_meta_data.title.replace(" ", "") + ","]
-    bibtex_properties.append("  author = {" + " and ".join([a_.name for a_ in ds_meta_data.authors]) + closing_)
-    bibtex_properties.append("  title = {" + ds_meta_data.title + closing_)
     
-    if os.environ.get("FLASK_ENV").lower()=="production":
-        bibtex_properties.append("  howpublished = {https://zenodo.org/records/" + str(ds_meta_data.deposition_id) + closing_)
-    else:
-        bibtex_properties.append("  howpublished = {https://sandbox.zenodo.org/records/" + str(ds_meta_data.deposition_id) + closing_)
-    bibtex_properties.append("  year = {" + str(dataset.created_at.date().year) + closing_)
-    bibtex_properties.append("  note = {Accessed: " + str(datetime.now().date()) + closing_) #opcional
-    bibtex_properties.append("  annote = {" + ds_meta_data.description + closing_) #opcional
+    bibtex_propiedades = {
+        "author": " and ".join([a_.name for a_ in ds_meta_data.authors]),
+        "title": ds_meta_data.title,
+        "howpublished": None,
+        "year": str(dataset.created_at.date().year),
+        "note": "Accessed: {}".format(str(datetime.now().date())),
+        "annote": ds_meta_data.description
+    }
+    texto_howpublished = "https://zenodo.org/records/{}" if os.environ.get("FLASK_ENV").lower()=="production" else "https://sandbox.zenodo.org/records/{}"
+    bibtex_propiedades["howpublished"] = texto_howpublished.format(ds_meta_data.deposition_id)
+    
+    lineas_preview ="@misc{MiscUvl" + ds_meta_data.title.replace(" ", "") + ",\n  "
+    lineas_preview += "\n  ".join([k_ + " = {" + v_+ "}," for (k_,v_) in bibtex_propiedades.items()]) + "\n}"
 
-    bibtex_properties[-1] = bibtex_properties[-1][:-1]
-    bibtex_properties.append("}")
-    bibtex_dataset = "\n".join(bibtex_properties)
-    
-    max_preview_len = 60
-    bibtex_preview = bibtex_dataset if len(bibtex_dataset)<=max_preview_len else bibtex_dataset[:max_preview_len] + " ..."
+    bibtex_file_name = ds_meta_data.title.replace(" ", "_").lower() + ".bib"
 
     # Save the cookie to the user's browser
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
-    
-    n_px = 17*(int(len(bibtex_properties)/2)+1)
 
-    page_render = render_template("dataset/view_dataset.html",
-                    dataset=dataset,
-                    bibtex_dataset=bibtex_dataset,
-                    bibtex_preview=bibtex_preview,
-                    bibtex_preview_start = bibtex_properties[0],
-                    bibtex_preview_lines=bibtex_properties[1:-1],
-                    bibtex_preview_end = bibtex_properties[-1]).replace('id="boton_exportar_bibtex">',
-                    'id="boton_exportar_bibtex" style="padding-top: {}px;padding-bottom: {}px;">'.format(n_px, n_px), 1)
-
-    resp = make_response(page_render)
-    # resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset))
+    resp = make_response(render_template("dataset/view_dataset.html",dataset=dataset,bibtex_dataset=lineas_preview,bibtex_file_name=bibtex_file_name))
     resp.set_cookie("view_cookie", user_cookie)
 
     return resp
@@ -290,13 +281,127 @@ def get_unsynchronized_dataset(dataset_id):
 
     if not dataset:
         abort(404)
+    
+    ds_meta_data = dsmetadata_service.get_by_id(dataset.ds_meta_data_id)
 
+    bibtex_propiedades = {
+        "author": " and ".join([a_.name for a_ in ds_meta_data.authors]),
+        "title": ds_meta_data.title,
+        "howpublished": None,
+        "year": str(dataset.created_at.date().year),
+        "note": "Accessed: {}".format(str(datetime.now().date())),
+        "annote": ds_meta_data.description
+    }
+    texto_howpublished = "https://zenodo.org/records/{}" if os.environ.get("FLASK_ENV").lower()=="production" else "https://sandbox.zenodo.org/records/{}"
+    bibtex_propiedades["howpublished"] = texto_howpublished.format(ds_meta_data.deposition_id)
+    
+    lineas_preview ="@misc{MiscUvl" + ds_meta_data.title.replace(" ", "") + ",\n  "
+    lineas_preview += "\n  ".join([k_ + " = {" + v_+ "}," for (k_,v_) in bibtex_propiedades.items()]) + "\n}"
+
+    bibtex_file_name = ds_meta_data.title.replace(" ", "_").lower() + ".bib"
+   
+    return render_template("dataset/view_dataset.html", dataset=dataset,bibtex_dataset=lineas_preview,bibtex_file_name=bibtex_file_name)
+
+
+@dataset_bp.route('/dataset/commit/<int:dataset_id>', methods=['GET','POST'])
+def commit(dataset_id):
+    
+    account_info = github.get('/user')
+    
+    if account_info.ok:
+        username = account_info.json()['login']
+        name = account_info.json().get('name') or "Unknown Name"
+        email = account_info.json().get('email') or "unknown@example.com"
+    else:
+        return 'First sync your github account.'
+    
+    try:
+            
+        ruta_repositorio = f"/app/uvl_git/{username}"   
+        
+        subprocess.run(f"git config user.name '{name}'", cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run(f"git config user.email '{email}'", cwd=ruta_repositorio, check=True, shell=True)
+        
+        token = os.getenv('GH_PAT')
+        repo_url = f"https://{token}@github.com/uvlhub/{username}.git"
+        subprocess.run(f"git remote set-url origin {repo_url}", cwd=ruta_repositorio, check=True, shell=True)
+             
+        # Obtener el nombre y los archivos del dataset
+        repository = DataSetRepository()
+        nombre = repository.get_dataset_name(dataset_id)
+        ruta_carpeta = os.path.join(ruta_repositorio, nombre)
+        os.makedirs(ruta_carpeta, exist_ok=True)
+        
+        all_files = repository.get_all_files_for_dataset(dataset_id)
+        
+        # Copiar archivos y añadirlos al commit
+        for archivo in all_files:
+            ruta_archivo_origen = archivo.get_path()
+            ruta_destino_archivo = os.path.join(ruta_carpeta, os.path.basename(ruta_archivo_origen))
+            shutil.copy(ruta_archivo_origen, ruta_destino_archivo)
+            subprocess.run(f"git add {os.path.relpath(ruta_destino_archivo, ruta_repositorio)}", cwd=ruta_repositorio, check=True, shell=True)
+        
+        # Realizar el commit y el push
+        subprocess.run('git commit -m "Commit realizado desde uvlhub"', cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run("git push origin main", cwd=ruta_repositorio, check=True, shell=True)
+
+        return "Dataset has been pushed to GitHub correctly."
+
+
+    except subprocess.CalledProcessError as e:
+        return f"This dataset is already in your github repository."
+    
+    
+    
+@dataset_bp.route('/dataset/commit_file/<int:file_id>', methods=['GET','POST'])
+def commit_file(file_id):
+    
+    account_info = github.get('/user')
+    
+    if account_info.ok:
+        username = account_info.json()['login']
+        name = account_info.json().get('name') or "Unknown Name"
+        email = account_info.json().get('email') or "unknown@example.com"
+        
+    else:
+        return 'First sync your github account.'
+    
+    try:
+       
+        ruta_repositorio = f"/app/uvl_git/{username}"
+    
+        # Configurar usuario de Git
+        subprocess.run(f"git config user.name '{name}'", cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run(f"git config user.email '{email}'", cwd=ruta_repositorio, check=True, shell=True)
+
+        # Configurar URL remota con el PAT
+        token = os.getenv('GH_PAT')  # Asegúrate de configurar esta variable en tu entorno de despliegue
+        repo_url = f"https://{token}@github.com/uvlhub/{username}.git"
+        subprocess.run(f"git remote set-url origin {repo_url}", cwd=ruta_repositorio, check=True, shell=True)
+
+        # Obtener archivo y hacer commit
+        hubfile_repository = HubfileRepository()
+        hubfile = hubfile_repository.get_hubfile_by_id(file_id)
+        ruta_archivo_origen = hubfile.get_path()
+        ruta_destino_archivo = os.path.join(ruta_repositorio, hubfile.name)
+        shutil.copy(ruta_archivo_origen, ruta_destino_archivo)
+
+        subprocess.run(f"git add {hubfile.name}", cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run('git commit -m "Commit realizado desde uvlhub"', cwd=ruta_repositorio, check=True, shell=True)
+        subprocess.run("git push origin main", cwd=ruta_repositorio, check=True, shell=True)
+
+        return "This model has been pushed to GitHub correctly."
+
+    except subprocess.CalledProcessError as e:
+        return f"This model is already in your github repository."
+
+¡
     return render_template("dataset/view_dataset.html", dataset=dataset)
 
 @dataset_bp.route("/dataset/download/<int:file_id>/<string:format>", methods=["GET"])
 def download_dataset_format(file_id, format):
     """Endpoint to download dataset in the specified format.
-    Formats supported: uvl, glencoe, splot, dimacs, zip.
+    Formats supported: glencoe, splot, dimacs, zip.
     """
     if format == "glencoe":
         return redirect(url_for("flamapy.to_glencoe", file_id=file_id))
