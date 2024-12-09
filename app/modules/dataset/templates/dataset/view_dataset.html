@@ -48,11 +48,6 @@
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="btnGroupDropExport">
                             <li>
-                                <a class="dropdown-item" href="{{ url_for('hubfile.download_file', file_id=dataset.id) }}">
-                                    UVL
-                                </a>
-                            </li>
-                            <li>
                                 <a class="dropdown-item" href="{{ url_for('flamapy.to_glencoe', file_id=dataset.id) }}">
                                     Glencoe
                                 </a>
