@@ -75,6 +75,7 @@ python-sat==1.8.dev13
 pytz==2024.1
 pyzmq==26.0.3
 requests==2.32.3
+-e git+https://github.com/flamenquin-hub-single/uvlhub.git@f79b412fc1ae0f2d31a74fa3b26fb7baec3cadd3#egg=rosemary
 selenium==4.22.0
 selenium-wire==5.1.0
 setuptools==70.3.0
