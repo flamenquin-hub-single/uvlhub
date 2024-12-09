@@ -395,7 +395,6 @@ def commit_file(file_id):
     except subprocess.CalledProcessError as e:
         return f"This model is already in your github repository."
 
-¡
     return render_template("dataset/view_dataset.html", dataset=dataset)
 
 @dataset_bp.route("/dataset/download/<int:file_id>/<string:format>", methods=["GET"])
