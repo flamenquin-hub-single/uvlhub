@@ -54,8 +54,7 @@
                                        value="" autofocus>
                             </div>
                         </div>
-
-                        <div class="col-lg-6">
+                        <div class="col-lg-12">
                             <div class="mb-3">
                                 <label class="form-label" for="publication_type">Filter by publication
                                     type</label>
@@ -83,7 +82,79 @@
                                     <option value="other">Other</option>
                                 </select>
                             </div>
-
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label for="min_files">Min Files:</label>
+                                    <input type="number" id="min_files" name="min_files" class="form-control" placeholder="Min Files">
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label for="max_files">Max Files:</label>
+                                    <input type="number" id="max_files" name="max_files" class="form-control" placeholder="Max Files">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label for="min_leaf_count">Min Leaf Count:</label>
+                                    <input type="number" id="min_leaf_count" name="min_leaf_count" class="form-control" placeholder="Min Leaf Count">
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label for="max_leaf_count">Max Leaf Count:</label>
+                                    <input type="number" id="max_leaf_count" name="max_leaf_count" class="form-control" placeholder="Max Leaf Count">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label for="min_depth">Min Depth:</label>
+                                    <input type="number" id="min_depth" name="min_depth" class="form-control" placeholder="Min Depth">
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label for="max_depth">Max Depth:</label>
+                                    <input type="number" id="max_depth" name="max_depth" class="form-control" placeholder="Max Depth">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label for="min_av_branching_factor">Min Average Branching Factor:</label>
+                                    <input type="number" id="min_av_branching_factor" name="min_av_branching_factor" class="form-control" placeholder="Min Average Branching Factor">
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-3">
+                                    <label for="max_av_branching_factor">Max Average Branching Factor:</label>
+                                    <input type="number" id="max_av_branching_factor" name="max_av_branching_factor" class="form-control" placeholder="Max Average Branching Factor">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-12">
+                            <div class="mb-3">
+                                <label class="form-label" for="leaf_feature_name">Leaf Feature Name:</label>
+                                <input type="text" id="leaf_feature_name" name="leaf_feature_name" class="form-control" 
+                                       placeholder="Enter leaf feature name">
+                            </div>
+                        </div>
+                        <div class="col-lg-12">
+                            <div class="mb-3">
+                                <label class="form-label" for="core_feature_name">Core Feature Name:</label>
+                                <input type="text" id="core_feature_name" name="core_feature_name" class="form-control" 
+                                       placeholder="Enter core feature name">
+                            </div>
                         </div>
 
                     </div>
@@ -108,7 +179,20 @@
                                     </span>
                                 </label>
                             </div>
-
+                            <div>
+                                <label class="form-check">
+                                    <input class="form-check-input" type="radio" value="filesize_asc" name="sorting">
+                                    <span class="form-check-label">
+                                        Smallest first
+                                    </span>
+                                </label>
+                                <label class="form-check">
+                                    <input class="form-check-input" type="radio" value="filesize_desc" name="sorting">
+                                    <span class="form-check-label">
+                                        Largest first
+                                    </span>
+                                </label>
+                            </div>
                         </div>
 
                     </div>

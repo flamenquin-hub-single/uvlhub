@@ -1,19 +1,17 @@
 features
-    Chat
-        mandatory
-            Connection
-                alternative
-                    "Peer 2 Peer"
-                    Server
-            Messages
-                or
-                    Text
-                    Video
-                    Audio
-        optional
-            "Data Storage"
-            "Media Player"
-
+	VIRTUAL_ROOT {abstract}	
+		or
+			GSM_Protocol_1900
+			MP3_Recording
+			Camera_Resolution	
+				alternative
+					"2_1MP"
+					"5 MP"
+					"3_1MP"
+			Camera
+			Audio_Formats	
+				or
+					WAV
+					MP3
 constraints
-    Server => "Data Storage"
-    Video | Audio => "Media Player"
+	MP3_Recording => MP3
