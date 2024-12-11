@@ -434,7 +434,8 @@
                             this.on('error', function (file, response) {
                                 console.error("Error uploading file: ", response);
                                 let alert = document.createElement('p');
-                                alert.textContent = 'UVL not valid: ' + file.name;
+                                alert.textContent = 'UVL not valid: ' + file.name +'. Error: '+response.message;
+				this.removeFile(file);
                                 alerts.appendChild(alert);
                                 alerts.style.display = 'block';
                             });
