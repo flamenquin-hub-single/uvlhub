@@ -388,7 +388,6 @@ var currentId = 0;
 
 			});
 		}
-	};
 
 
 function isValidOrcid(orcid) {
