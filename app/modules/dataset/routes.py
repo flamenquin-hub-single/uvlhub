@@ -334,14 +334,13 @@ def commit(dataset_id):
         
         all_files = repository.get_all_files_for_dataset(dataset_id)
         
-        # Copiar archivos y añadirlos al commit
+        # Copiar archivos, llevarlos al directorio de git y stagearlos
         for archivo in all_files:
             ruta_archivo_origen = archivo.get_path()
             ruta_destino_archivo = os.path.join(ruta_carpeta, os.path.basename(ruta_archivo_origen))
             shutil.copy(ruta_archivo_origen, ruta_destino_archivo)
             subprocess.run(f"git add {os.path.relpath(ruta_destino_archivo, ruta_repositorio)}", cwd=ruta_repositorio, check=True, shell=True)
         
-        # Realizar el commit y el push
         subprocess.run('git commit -m "Commit realizado desde uvlhub"', cwd=ruta_repositorio, check=True, shell=True)
         subprocess.run("git push origin main", cwd=ruta_repositorio, check=True, shell=True)
 
@@ -370,16 +369,15 @@ def commit_file(file_id):
        
         ruta_repositorio = f"/app/uvl_git/{username}"
     
-        # Configurar usuario de Git
         subprocess.run(f"git config user.name '{name}'", cwd=ruta_repositorio, check=True, shell=True)
         subprocess.run(f"git config user.email '{email}'", cwd=ruta_repositorio, check=True, shell=True)
 
         # Configurar URL remota con el PAT
-        token = os.getenv('GH_PAT')  # Asegúrate de configurar esta variable en tu entorno de despliegue
+        token = os.getenv('GH_PAT')
         repo_url = f"https://{token}@github.com/uvlhub/{username}.git"
         subprocess.run(f"git remote set-url origin {repo_url}", cwd=ruta_repositorio, check=True, shell=True)
 
-        # Obtener archivo y hacer commit
+        # Obtener archivo y copiarlo al directorio de git
         hubfile_repository = HubfileRepository()
         hubfile = hubfile_repository.get_hubfile_by_id(file_id)
         ruta_archivo_origen = hubfile.get_path()

@@ -15,11 +15,11 @@ authentication_service = AuthenticationService()
 user_profile_service = UserProfileService()
 
 app = Flask(__name__)
-#app.config["SECRET_KEY"] = "SECRET KEY  "
 token_admin = os.getenv("ORG_TOKEN_ADMIN")
+client_secret = os.getenv("CLIENT_SECRET")
 
-github_blueprint = make_github_blueprint(client_id='Ov23liH3c6144kMW6I2g',
-                                        client_secret='00b92023ceb36020d4d0a7f34d5a583e2e386611')
+
+github_blueprint = make_github_blueprint(client_id='Ov23liH3c6144kMW6I2g', client_secret=client_secret)
 
 app.register_blueprint(github_blueprint, url_prefix='/github_login')
 
@@ -117,7 +117,6 @@ def invite_user():
 
     if response.status_code == 201:
         return f"Now {username} can join our github organization. Accept it in github. Once joined, you don't have to repeat this process."
-        #return jsonify({"message": f"Invitación enviada a {username} exitosamente."}), 201
     
     elif response.status_code == 404:
         return jsonify({"error": f"Username {username} not found"}), 404
@@ -153,19 +152,8 @@ def crear_repo():
     
     except subprocess.CalledProcessError as e:
         
-        if e.returncode == 127:
-            return '''
-                The command 'gh' is not recognized. Please install GitHub CLI by following these steps in your command line:
-
-                    1. Update your package list:
-                sudo apt update
-                
-                    2. Install the GitHub CLI:
-                sudo apt install gh
-                
-                    3. You can verify the installation:
-                gh --version
-                '''
-        
-        return f"Repository '{username}' is already created. Now, always you are sync with github, you can push from here your datasets or models to github."
-    
+        return (
+            f"Something went wrong, it may be caused by:<br>"
+            f"1) Repository '{username}' is already created. Don't worry, now always you are sync with github, you can push from here your datasets or models to github.<br>"
+            f"2) If you are a developer on localhost, you will have to give administrator permission."
+        )    
