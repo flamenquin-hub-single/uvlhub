@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask
+
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 from flask_migrate import Migrate
@@ -25,12 +26,6 @@ def create_app(config_name='development'):
     # Load configuration according to environment
     config_manager = ConfigManager(app)
     config_manager.load_config(config_name=config_name)
-
-    # Add SQLAlchemy-specific configuration
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_pre_ping': True,  # Reconexión automática
-        'pool_recycle': 280,   # Tiempo para reciclar conexiones
-    }
 
     # Initialize SQLAlchemy and Migrate with the app
     db.init_app(app)
