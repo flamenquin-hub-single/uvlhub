@@ -153,7 +153,7 @@ def upload():
         get_tree(file_path)
     except Exception as e:
         os.remove(file_path)
-        return jsonify({"message": str(e)}),400
+        return jsonify({"message": str(e),"syntax": True}),400
 
     return (
         jsonify(
