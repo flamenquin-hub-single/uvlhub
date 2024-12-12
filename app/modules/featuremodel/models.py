@@ -2,6 +2,9 @@ from app import db
 from sqlalchemy import Enum as SQLAlchemyEnum
 
 from app.modules.dataset.models import Author, PublicationType
+from flamapy.metamodels.fm_metamodel.transformations import UVLReader
+from flamapy.metamodels.fm_metamodel.operations import FMAverageBranchingFactor, FMCountLeafs
+from flamapy.metamodels.fm_metamodel.operations import FMMaxDepthTree, FMLeafFeatures, FMCoreFeatures
 
 
 class FeatureModel(db.Model):
@@ -13,6 +16,51 @@ class FeatureModel(db.Model):
 
     def __repr__(self):
         return f'FeatureModel<{self.id}>'
+
+    def calculate_statistics(self):
+        from app.modules.hubfile.services import HubfileService
+        hubfile = HubfileService().get_by_id(self.id)
+        fm = UVLReader(hubfile.get_path()).transform()
+
+        leaf_counter = FMCountLeafs()
+        leaf_counter.execute(fm)
+        leaf_count = leaf_counter.get_result()
+
+        depth_calculator = FMMaxDepthTree()
+        depth_calculator.execute(fm)
+        max_tree_depth = depth_calculator.get_result()
+
+        branching_factor_calculator = FMAverageBranchingFactor()
+        branching_factor_calculator.execute(fm)
+        average_branching_factor = branching_factor_calculator.get_result()
+
+        return {
+            "leaf_count": leaf_count,
+            "max_depth": max_tree_depth,
+            "branching_factor": average_branching_factor
+        }
+
+    def get_leaf_feature_names(self):
+        from app.modules.hubfile.services import HubfileService
+        hubfile = HubfileService().get_by_id(self.id)
+        fm = UVLReader(hubfile.get_path()).transform()
+
+        leaf_features_operation = FMLeafFeatures()
+        leaf_features_operation.execute(fm)
+        leaf_features = leaf_features_operation.get_result()
+
+        return [feature.name for feature in leaf_features]
+
+    def get_core_feature_names(self):
+        from app.modules.hubfile.services import HubfileService
+        hubfile = HubfileService().get_by_id(self.id)
+        fm = UVLReader(hubfile.get_path()).transform()
+
+        core_features_operation = FMCoreFeatures()
+        core_features_operation.execute(fm)
+        core_features = core_features_operation.get_result()
+
+        return [feature.name for feature in core_features]
 
 
 class FMMetaData(db.Model):

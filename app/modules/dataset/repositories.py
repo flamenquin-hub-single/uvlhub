@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import logging
+import re
 from flask_login import current_user
 from typing import Optional
 
@@ -38,7 +39,7 @@ class DSMetaDataRepository(BaseRepository):
 
     def filter_by_doi(self, doi: str) -> Optional[DSMetaData]:
         return self.model.query.filter_by(dataset_doi=doi).first()
-
+    
 
 class DSViewRecordRepository(BaseRepository):
     def __init__(self):
@@ -113,7 +114,37 @@ class DataSetRepository(BaseRepository):
             .limit(5)
             .all()
         )
+        
+    def get_all_files_for_dataset(self, dataset_id: int):
+        dataset = self.model.query.get(dataset_id)
+        if not dataset:
+            return None
+        all_files = []
+        for feature_model in dataset.feature_models:
+            all_files.extend(feature_model.files)
+        return all_files
+    
+    def _normalize_folder_name(self, folder_name: str) -> str:
+   
+        normalized_name = re.sub(r'[^\w\s-]', '', folder_name)
+        normalized_name = re.sub(r'\s+', '_', normalized_name.strip())
+        return normalized_name
+    
+    def get_dataset_name(self, dataset_id: int) -> str:
+        dataset = (
+        self.model.query
+        .filter_by(id=dataset_id)
+        .first()
+    )
+        if dataset and dataset.ds_meta_data:
+            title = dataset.ds_meta_data.title
+            return self._normalize_folder_name(title)
+        
+        return None
+    
 
+
+    
 
 class DOIMappingRepository(BaseRepository):
     def __init__(self):

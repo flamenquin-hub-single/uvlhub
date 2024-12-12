@@ -41,6 +41,35 @@
                         <span class="badge bg-secondary">{{ dataset.get_cleaned_publication_type() }}</span>
                     </div>
                 </div>
+                <div class="mt-2">
+                    <div class="btn-group" role="group">
+                        <button id="btnGroupDropExport" type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius: 5px;">
+                            <i data-feather="download"></i> Download
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="btnGroupDropExport">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('flamapy.to_glencoe', file_id=dataset.id) }}">
+                                    Glencoe
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('flamapy.to_cnf', file_id=dataset.id) }}">
+                                    DIMACS
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('flamapy.to_splot', file_id=dataset.id) }}">
+                                    SPLOT
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('hubfile.download_file', file_id=dataset.id) }}">
+                                    ZIP
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
                 <p class="text-secondary">{{ dataset.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
 
                 <div class="row mb-4">
@@ -158,8 +187,25 @@
 
             </div>
 
+            {% if bibtex_dataset %}
+
+            <div class="card-body" style="padding-top: 0px; display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
+                <div id="dataset_bibtex_export" style="display: none">{{ bibtex_dataset }}</div>
+                <button onclick="viewBibtex('{{ bibtex_file_name }}')" class="btn btn-outline-secondary btn-sm" style="border-radius: 5px;">
+                    <i data-feather="eye"></i> View dataset in BibTex format
+                </button>
+
+                <a href="{{ url_for('dataset.commit', dataset_id=dataset.id) }}" class="btn btn-primary mt-3" style="border-radius: 5px;">
+                    <i class="center-button-icon"></i>
+                    Upload dataset to github
+                </a>
+            </div>
+            {% endif %}
+
+            
+
             {% if dataset.ds_meta_data.dataset_doi %}
-            <div class="card-body" style="padding-top: 0px">
+            <div class="card-body" style="padding-top: 0px; display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
 
                 <div id="dataset_doi_uvlhub" style="display: none">
                     {{ dataset.get_uvlhub_doi() }}
@@ -178,9 +224,12 @@
                 <div id="dataset_doi_uvlhub" style="display: none">
                     {{ dataset.get_uvlhub_doi() }}
                 </div>
+
                 
             </div>
             {% endif %}
+
+            
 
         </div>
 
@@ -268,6 +317,10 @@
                                 
                             </div>
                             <div class="col-12 text-end" >
+
+                                <a href="{{ url_for('dataset.commit_file', file_id=file.id) }}" class="btn btn-outline-secondary btn-sm" style="border-radius: 5px;">
+                                    <i data-feather="github"></i> Upload
+                                </a>
 
                                 <button onclick="viewFile('{{ file.id }}')" class="btn btn-outline-secondary btn-sm" style="border-radius: 5px;">
                                     <i data-feather="eye"></i> View
@@ -360,6 +413,30 @@
     </div>
 </div>
 
+<div class="modal fade" id="bibtexViewerModal" tabindex="-1" aria-labelledby="bibtexViewerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" style="height: 80vh; display: flex; align-items: center;">
+        <div class="modal-content" style="height: 80vh;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h5 class="modal-title" id="bibtexViewerModalLabel">Preview of dataset in BibTex format</h5>
+                <div>
+                    <a href="#" class="btn btn-outline-primary btn-sm" id="bibtexDownloadButton"
+                        style="margin-right: 5px; margin-bottom: 5px; border-radius: 5px;">
+                        <i data-feather="download"></i>
+                    </a>
+                    <button onclick="copyText('dataset_bibtex_export')" class="btn btn-outline-secondary btn-sm"
+                        style="margin-right: 5px; margin-bottom: 5px; border-radius: 5px;">
+                        <i data-feather="copy"></i>
+                    </button>
+                    <button onclick="freeBibtexUrl()" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; height: calc(100vh - 50px);">
+                <pre id="bibtexContent" style="height: 100%; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; background-color: #f5f5f5; padding: 20px; border-radius: 5px; border: 1px solid #ccc;"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
 
 
@@ -370,6 +447,24 @@
     });
 
     var currentFileId;
+
+    function freeBibtexUrl() {
+        console.log("entra en freeBibtexUrl")
+        URL.revokeObjectURL(document.getElementById('bibtexDownloadButton').href)
+    }
+
+    function viewBibtex(bibfilename) {
+        var bib_content_display = document.getElementById('dataset_bibtex_export').textContent;
+
+        var blob = new Blob([bib_content_display], { type: 'text/plain' });
+        var fileURL = URL.createObjectURL(blob);
+        document.getElementById('bibtexDownloadButton').href = fileURL;
+        document.getElementById('bibtexDownloadButton').download = bibfilename;
+        document.getElementById('bibtexContent').textContent = bib_content_display;
+
+        var modal = new bootstrap.Modal(document.getElementById('bibtexViewerModal'));
+        modal.show();
+    }
 
     function viewFile(fileId) {
         fetch(`/file/view/${fileId}`)
