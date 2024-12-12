@@ -247,6 +247,9 @@
 
                                     let alert = document.createElement('p');
                                     alert.textContent = 'Invalid file extension: ' + file.name;
+				    if (alerts.children.length>0) {
+					alerts.removeChild(alerts.children[0])
+				    }
                                     alerts.appendChild(alert);
                                     alerts.style.display = 'block';
                                 }
@@ -439,10 +442,15 @@
 				} else {
 					if ( response!="You can't upload files of this type.") {
 
-						alert.textContent = 'UVL not valid';
-			    		}
+						alert.textContent = 'Something went wrong while saving the file, try again please';
+					} else {
+						alert.textContent = "You can't upload files of this type.";
+					}
 				}
 				this.removeFile(file);
+				if (alerts.children.length>0) {
+					alerts.removeChild(alerts.children[0]);
+				}
                                 alerts.appendChild(alert);
                                 alerts.style.display = 'block';
                             });
