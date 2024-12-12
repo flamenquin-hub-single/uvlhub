@@ -67,6 +67,7 @@ jobs:
           ORG_TOKEN_ADMIN: ${{ secrets.ORG_TOKEN_ADMIN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_PAT: ${{ secrets.GH_PAT }}
+          CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
         run: |
           curl "$deploy_url"
       
