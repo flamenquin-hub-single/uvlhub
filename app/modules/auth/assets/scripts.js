@@ -1,1 +1,1 @@
-console.log("Hi, I am a script loaded from auth module. Lorem Ipsum");
+console.log("Hi, I am a script loaded from auth module");
