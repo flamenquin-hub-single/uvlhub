@@ -9,6 +9,7 @@ from app.modules.profile.repositories import UserProfileRepository
 from core.configuration.configuration import uploads_folder_name
 from core.services.BaseService import BaseService
 
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 class AuthenticationService(BaseService):
     def __init__(self):

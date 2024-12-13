@@ -1,16 +1,17 @@
-name: Commits Syntax Checker
+name: Commit Message Check
 
-on:
+on: 
   pull_request:
-    branches: [main]
+    branches: [develop]
     types: [opened, reopened, edited, review_requested, synchronize]
   push:
     branches:
       - "main"
+      - "develop"
   workflow_call:
 
 jobs:
-  check:
+  commit-check:
     name: Conventional Commits
     runs-on: ubuntu-latest
     steps:

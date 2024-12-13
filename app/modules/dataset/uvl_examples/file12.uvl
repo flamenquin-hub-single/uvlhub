@@ -1,19 +1,23 @@
 features
-    Chat
-        mandatory
-            Connection
-                alternative
-                    "Peer 2 Peer"
-                    Server
-            Messages
-                or
-                    Text
-                    Video
-                    Audio
-        optional
-            "Data Storage"
-            "Media Player"
-
-constraints
-    Server => "Data Storage"
-    Video | Audio => "Media Player"
+	"Movies_App" 
+		mandatory
+			"GUI" 
+				alternative
+					"Thin" 
+					"Rich" 
+		mandatory
+			"DB" 
+				alternative
+					"Local" 
+					"Remote" 
+						mandatory
+							"Cache_Policy" 
+		mandatory
+			"Network" 
+				alternative
+					"Wifi" 
+					"Bluetooth" 
+		optional
+			"GPS" 
+				optional
+					"Built-In" 
