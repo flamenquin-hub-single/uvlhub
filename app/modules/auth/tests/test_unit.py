@@ -1,3 +1,4 @@
+from unittest.mock import MagicMock, patch
 import pytest
 from flask import url_for
 
@@ -117,3 +118,39 @@ def test_service_create_with_profile_fail_no_password(clean_database):
 
     assert UserRepository().count() == 0
     assert UserProfileRepository().count() == 0
+    
+    
+    
+@patch('flask_dance.contrib.github.github')  
+def test_redirect_to_login(mock_github, test_client):
+    mock_github.get.return_value = MagicMock(authorized=False)
+
+    response = test_client.get('/gitlogin')
+
+    assert response.status_code == 302
+    assert "/github" in response.location, f"Expected redirection to github, got {response.request.path}"
+    
+    
+
+@patch('flask_dance.contrib.github.github')
+def test_invite_user_no_sync_error(mock_github, test_client):
+    mock_github.get.return_value = MagicMock(ok=False)
+
+    response = test_client.post('/invite')
+
+    assert response.status_code == 200
+    assert b"First sync your github account." in response.data
+
+
+@patch('flask_dance.contrib.github.github')
+def test_create_repo_no_sync_error(mock_github, test_client):
+    mock_github.get.return_value = MagicMock(ok=False)
+
+    response = test_client.post('/create_repo')
+
+    assert response.status_code == 200
+    assert b"First sync your github account." in response.data
+    
+
+
+
