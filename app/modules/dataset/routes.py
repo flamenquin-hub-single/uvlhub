@@ -293,8 +293,10 @@ def get_unsynchronized_dataset(dataset_id):
         "annote": ds_meta_data.description
     }
     texto_howpublished = "https://zenodo.org/records/{}" if os.environ.get("FLASK_ENV").lower()=="production" else "https://sandbox.zenodo.org/records/{}"
-    bibtex_propiedades["howpublished"] = texto_howpublished.format(ds_meta_data.deposition_id)
-    
+    if ds_meta_data.deposition_id:
+        bibtex_propiedades["howpublished"] = texto_howpublished.format(ds_meta_data.deposition_id)
+    else:
+        bibtex_propiedades.pop("howpublished")
     lineas_preview ="@misc{MiscUvl" + ds_meta_data.title.replace(" ", "") + ",\n  "
     lineas_preview += "\n  ".join([k_ + " = {" + v_+ "}," for (k_,v_) in bibtex_propiedades.items()]) + "\n}"
 
