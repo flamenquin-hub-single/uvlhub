@@ -67,3 +67,8 @@ def test_check_largest_first():
 
     finally:
         close_driver(driver)
+
+
+# Call the test function
+test_check_smallest_first()
+test_check_largest_first()
