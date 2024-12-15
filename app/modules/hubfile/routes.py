@@ -35,7 +35,7 @@ def download_file(file_id):
         # Record the download in your database
         HubfileDownloadRecordService().create(
             user_id=current_user.id if current_user.is_authenticated else None,
-            file_id=file_id,
+            file_id=file.id,
             download_date=datetime.now(timezone.utc),
             download_cookie=user_cookie,
         )
