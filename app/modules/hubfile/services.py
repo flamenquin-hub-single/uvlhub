@@ -24,7 +24,7 @@ class HubfileService(BaseService):
         return self.repository.get_dataset_by_hubfile(hubfile)
     
     def get_by_dataset_id(self, dataset_id: int) -> List[Hubfile]:
-        return self.repository.get_hubfile_by_dataset_id(dataset_id)
+        return self.repository.get_hubfiles_by_dataset_id(dataset_id)
     
     def get_path_by_hubfile(self, hubfile: Hubfile) -> str:
 
