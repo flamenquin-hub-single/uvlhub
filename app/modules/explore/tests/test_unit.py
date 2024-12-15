@@ -2,7 +2,6 @@ import pytest
 from app.modules.explore.services import ExploreService
 from app.modules.auth.seeders import AuthSeeder
 from app.modules.dataset.seeders import DataSetSeeder
-# from app.modules.dataset.models import DataSet
 
 
 @pytest.fixture(scope='module')
