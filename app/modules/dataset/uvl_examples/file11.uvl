@@ -1,19 +1,27 @@
 features
-    Chat
-        mandatory
-            Connection
-                alternative
-                    "Peer 2 Peer"
-                    Server
-            Messages
-                or
-                    Text
-                    Video
-                    Audio
-        optional
-            "Data Storage"
-            "Media Player"
-
+	Onlineshop {abstract}	
+		mandatory
+			Payment {abstract}	
+				alternative
+					"Debit Card"
+					"Credit Card"
+			"Product Selection" {abstract}	
+				mandatory
+					Catalog	
+						optional
+							Categories
+							Sort
+				optional
+					Search
+		optional
+			UserManagement {abstract}	
+				or
+					Orders
+					Security
+					Payments
+					Wishlist
 constraints
-    Server => "Data Storage"
-    Video | Audio => "Media Player"
+	Search => Security
+	Security => !Payments
+	Payments => !Security
+	Sort | Search
