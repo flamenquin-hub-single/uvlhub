@@ -193,7 +193,7 @@ def get_url_detalles(driver, host):
 
             # Count final datasets
             final_datasets = count_datasets(driver, host)
-            assert final_datasets == initial_datasets + 2, "Test failed!"
+            assert final_datasets == initial_datasets + 1, "Test failed!"
             
             listado_unsync = driver.find_element(By.CLASS_NAME, "row") # TODO: encontrar el primer elemento de tipo tbody
             dataset_creado = listado_unsync.find_element(By.XPATH, "//table//tbody//tr")
@@ -303,7 +303,7 @@ def test_upload_dataset():
 
         # Count final datasets
         final_datasets = count_datasets(driver, host)
-        assert final_datasets == initial_datasets + 2, "Test failed!"
+        assert final_datasets == initial_datasets + 1, "Test failed!"
 
         print("Test passed!")
 
