@@ -2,6 +2,7 @@ import pytest
 from app.modules.explore.services import ExploreService
 from app.modules.auth.seeders import AuthSeeder
 from app.modules.dataset.seeders import DataSetSeeder
+# from app.modules.dataset.models import DataSet
 
 
 @pytest.fixture(scope='module')
@@ -98,3 +99,23 @@ def test_filtering_service_core_feature_name(test_client):
     # and "file5.uvl" as they contain "FitnessMonitor" in the core feature name.
     assert len(datasets) == expected_dataset_count, \
         f"Expected {expected_dataset_count} datasets, but got {len(datasets)}"
+
+def test_check_sorting_smallest_first(test_client):
+    """
+    Test to ensure that the filtering service correctly sorts datasets
+    based on the size, with smallest first.
+    """
+    explore_service = ExploreService()
+    datasets_sorted = explore_service.filter(sorting="filesize_asc")
+    first_ds = datasets_sorted[0]
+    assert first_ds.name()=="Sample dataset 4", f"Expected smallest dataset to be 'Sample dataset 4', but got '{first_ds.name()}' instead"
+
+def test_check_sorting_largest_first(test_client):
+    """
+    Test to ensure that the filtering service correctly sorts datasets
+    based on the size, with largest first.
+    """
+    explore_service = ExploreService()
+    datasets_sorted = explore_service.filter(sorting="filesize_desc")
+    first_ds = datasets_sorted[0]
+    assert first_ds.name()=="Sample dataset 2", f"Expected smallest dataset to be 'Sample dataset 2', but got '{first_ds.name()}' instead"
