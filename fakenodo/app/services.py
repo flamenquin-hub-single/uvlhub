@@ -10,9 +10,7 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-# List where all depositions are stored
-depositions: List[Deposition] = []
-
+depositions = []
 
 class Service(BaseService):
     def __init__(self):
@@ -50,7 +48,8 @@ class Service(BaseService):
             print(f"Error en la subida del archivo: {e}")
 
     def publish_deposition(self, deposition: Deposition) -> dict:
-        deposition.published = True
+        if deposition.doi!=None:
+            deposition.published = True
         return deposition.to_dict()
 
     def delete_deposition(self, deposition: Deposition) -> None:
@@ -61,3 +60,16 @@ class Service(BaseService):
 
     def get_doi(self, deposition_id: int) -> str:
         return self.get_deposition(deposition_id).doi
+
+    def generate_doi_id():
+        identifier = 10000
+        while True:
+            yield identifier
+            identifier+=1
+
+    doi_generator = generate_doi_id()
+
+    def generate_doi(self,deposition_id):
+        deposition = self.get_deposition(deposition_id)
+        doi_id = next(self.doi_generator)
+        deposition.doi = str(doi_id)+"/dataset."+str(doi_id)
