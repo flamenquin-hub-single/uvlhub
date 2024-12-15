@@ -12,7 +12,7 @@ from app import db
 
 @hubfile_bp.route("/file/download/<int:file_id>", methods=["GET"])
 def download_file(file_id):
-    file = HubfileService().get_or_404(file_id)
+    file = HubfileService().get_by_dataset_id(file_id)
     filename = file.name
 
     directory_path = f"uploads/user_{file.feature_model.data_set.user_id}/dataset_{file.feature_model.data_set_id}/"

@@ -75,7 +75,7 @@ def valid(file_id):
 def to_glencoe(file_id):
     temp_file = tempfile.NamedTemporaryFile(suffix='.json', delete=False)
     try:
-        hubfile = HubfileService().get_or_404(file_id)
+        hubfile = HubfileService().get_by_dataset_id(file_id)
         fm = UVLReader(hubfile.get_path()).transform()
         GlencoeWriter(temp_file.name, fm).transform()
 
@@ -90,7 +90,7 @@ def to_glencoe(file_id):
 def to_splot(file_id):
     temp_file = tempfile.NamedTemporaryFile(suffix='.splx', delete=False)
     try:
-        hubfile = HubfileService().get_by_id(file_id)
+        hubfile = HubfileService().get_by_dataset_id(file_id)
         fm = UVLReader(hubfile.get_path()).transform()
         SPLOTWriter(temp_file.name, fm).transform()
 
@@ -105,7 +105,7 @@ def to_splot(file_id):
 def to_cnf(file_id):
     temp_file = tempfile.NamedTemporaryFile(suffix='.cnf', delete=False)
     try:
-        hubfile = HubfileService().get_by_id(file_id)
+        hubfile = HubfileService().get_by_dataset_id(file_id)
         fm = UVLReader(hubfile.get_path()).transform()
         sat = FmToPysat(fm).transform()
         DimacsWriter(temp_file.name, sat).transform()
