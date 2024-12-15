@@ -25,6 +25,8 @@ from app.modules.dataset.services import (
 )
 from app.modules.hubfile.repositories import HubfileRepository
 from app.modules.zenodo.services import ZenodoService
+from app.modules.dataset.parser import get_tree
+logger = logging.getLogger(__name__)
 from flask_dance.contrib.github import github
 
 
@@ -99,6 +101,7 @@ def list_dataset():
         local_datasets=dataset_service.get_unsynchronized(current_user.id),
     )
 
+
 @dataset_bp.route("/dataset/check", methods=["GET", "POST"])
 @login_required
 def check_dataset():
@@ -125,6 +128,7 @@ def check_dataset():
 
     return render_template(
         "dataset/check_datasets.html", form = form )
+
 
 @dataset_bp.route("/dataset/file/upload", methods=["POST"])
 @login_required
@@ -156,6 +160,11 @@ def upload():
         file.save(file_path)
     except Exception as e:
         return jsonify({"message": str(e)}), 500
+    try:
+        get_tree(file_path)
+    except Exception as e:
+        os.remove(file_path)
+        return jsonify({"message": str(e),"syntax": True}),400
 
     return (
         jsonify(
