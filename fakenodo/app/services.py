@@ -1,6 +1,6 @@
 import hashlib
 import logging
-
+from random import randint
 from typing import List
 from fakenodo.app.models import Deposition, File
 from dotenv import load_dotenv
@@ -62,7 +62,7 @@ class Service(BaseService):
         return self.get_deposition(deposition_id).doi
 
     def generate_doi_id():
-        identifier = 10000
+        identifier = randint(10000,1000000)
         while True:
             yield identifier
             identifier+=1
