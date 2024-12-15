@@ -75,50 +75,40 @@ class CommitFileBehavior(TaskSet):
         else:
             print("User successfully logged in.")
 
+class DownloadDatasets(TaskSet):
+    formats = {
+        "Glencoe": "glencoe",
+        "SPLOT": "splot",
+        "DIMACS": "dimacs",
+        "ZIP": "zip"
+    }
+
     @task
-    def commit_dataset(self):
-        file_id = random.randint(1, 30)  
-        response = self.client.post(f"/dataset/commit_file/{file_id}", json={})
-        
-        if response.status_code == 200:
-            print(f"File {file_id} committed successfully: {response.text}")
-        elif response.status_code == 404:
-            print(f"File {file_id} not found: {response.status_code}")
-        elif response.status_code == 500:
-            print(f"Server error for File {file_id}: {response.status_code} - {response.text}")
-        else:
-            print(f"Unexpected status for File {file_id}: {response.status_code} - {response.text}")
-
-
-    @task(4)
-    def download_dataset_glencoe(self):
-        """Simula la descarga del dataset en formato Glencoe."""
-        dataset_id = 4  # Ajusta el ID del dataset si es necesario
-        self.client.get(f"/dataset/download/{dataset_id}/glencoe", name="/dataset/download/glencoe")
-
-    @task(3)
-    def download_dataset_splot(self):
-        """Simula la descarga del dataset en formato SPLOT."""
-        dataset_id = 4
-        self.client.get(f"/dataset/download/{dataset_id}/splot", name="/dataset/download/splot")
-
-    @task(2)
-    def download_dataset_dimacs(self):
-        """Simula la descarga del dataset en formato DIMACS."""
-        dataset_id = 4
-        self.client.get(f"/dataset/download/{dataset_id}/dimacs", name="/dataset/download/dimacs")
-
-    @task(1)
-    def download_dataset_zip(self):
-        """Simula la descarga del dataset en formato ZIP."""
-        dataset_id = 4
-        self.client.get(f"/dataset/download/{dataset_id}/zip", name="/dataset/download/zip")
-
+    def download_files(self):
+        for dataset_id in self.dataset_ids:  # Itera sobre tus dataset_ids
+            for format_name, format_value in self.formats.items():  # Itera sobre los formatos
+                with self.client.get(
+                    f"/flamapy/export/dataset/{dataset_id}/{format_value}",  # URL corregida
+                    name=f"Download {format_name}",
+                    allow_redirects=True,  # Sigue automáticamente las redirecciones
+                    catch_response=True  # Captura la respuesta para análisis
+                ) as response:
+                    if response.status_code == 200:  # Descarga exitosa
+                        response.success()
+                    elif response.status_code == 302:  # Redirección
+                        response.success()  # Tratamos 302 como éxito
+                    else:
+                        response.failure(
+                            f"Failed to download {format_name} for dataset {dataset_id} "
+                            f"with status code {response.status_code}"
+                        )
 
 class DatasetUser(HttpUser):
-      """Clase principal que define los usuarios y su comportamiento."""
-    tasks = [DatasetBehavior, CommitDatasetBehavior, CommitFileBehavior]
-    min_wait = 5000
-    max_wait = 9000
-    wait_time = between(5, 9)  # Espera entre 5 y 9 segundos entre tareas
-    host = get_host_for_locust_testing()
+    """
+    Clase principal que define los usuarios y su comportamiento.
+    """
+    tasks = [CommitFileBehavior]  # Asigna la tarea de descarga
+    min_wait = 5000  # Espera mínima de 5 segundos
+    max_wait = 9000  # Espera máxima de 9 segundos
+    wait_time = between(5, 9)  # Espera aleatoria entre tareas
+    host = "http://localhost:5000"  # La URL base de tu aplicación

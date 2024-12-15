@@ -41,35 +41,33 @@
                         <span class="badge bg-secondary">{{ dataset.get_cleaned_publication_type() }}</span>
                     </div>
                 </div>
-                <div class="mt-2">
                     <div class="btn-group" role="group">
                         <button id="btnGroupDropExport" type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius: 5px;">
                             <i data-feather="download"></i> Download
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="btnGroupDropExport">
                             <li>
-                                <a class="dropdown-item" href="{{ url_for('flamapy.to_glencoe', file_id=dataset.id) }}">
+                                <a class="dropdown-item" href="{{ url_for('flamapy.export_dataset', dataset_id=dataset.id, format='glencoe') }}">
                                     Glencoe
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="{{ url_for('flamapy.to_cnf', file_id=dataset.id) }}">
+                                <a class="dropdown-item" href="{{ url_for('flamapy.export_dataset', dataset_id=dataset.id, format='dimacs') }}">
                                     DIMACS
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="{{ url_for('flamapy.to_splot', file_id=dataset.id) }}">
+                                <a class="dropdown-item" href="{{ url_for('flamapy.export_dataset', dataset_id=dataset.id, format='splot') }}">
                                     SPLOT
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item" href="{{ url_for('hubfile.download_file', file_id=dataset.id) }}">
-                                    ZIP
-                                </a>
+                                <a class="dropdown-item" href="{{ url_for('dataset.download_dataset', dataset_id=dataset.id) }}">
+                                    ZIP (Original UVLs)
+                                </a>                                
                             </li>
                         </ul>
-                    </div>
-                </div>
+                    </div>     
                 <p class="text-secondary">{{ dataset.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
 
                 <div class="row mb-4">

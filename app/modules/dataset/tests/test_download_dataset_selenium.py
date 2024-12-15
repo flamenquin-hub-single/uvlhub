@@ -12,6 +12,7 @@ from core.environment.host import get_host_for_selenium_testing
 
 DOWNLOAD_DIR = "/tmp/selenium_downloads"  # Ruta de descargas personalizada
 
+
 def initialize_driver(download_dir=None):
     options = Options()
     if download_dir:
@@ -24,6 +25,7 @@ def initialize_driver(download_dir=None):
     driver = webdriver.Chrome(options=options)
     return driver
 
+
 def clean_download_folder():
     """Elimina todos los archivos previos en la carpeta de descargas."""
     if os.path.exists(DOWNLOAD_DIR):
@@ -31,60 +33,67 @@ def clean_download_folder():
             file_path = os.path.join(DOWNLOAD_DIR, file)
             os.remove(file_path)
 
-def is_file_downloaded_by_extension(extension, timeout=10):
-    """Verifica si un archivo con una extensión específica ha sido descargado."""
+
+def is_file_downloaded_by_extension(extension, timeout=20, exact=False):
+    """
+    Verifica si un archivo con una extensión específica ha sido descargado.
+
+    :param extension: Extensión del archivo o patrón para búsqueda.
+    :param timeout: Tiempo máximo de espera.
+    :param exact: Si es True, busca archivos con nombre exacto. Si no, busca solo por extensión.
+    """
     for _ in range(timeout):
-        files = glob.glob(os.path.join(DOWNLOAD_DIR, f"*.{extension}"))
+        files = glob.glob(os.path.join(DOWNLOAD_DIR, f"{extension}" if exact else f"*{extension}"))
+        print("Archivos actuales en la carpeta:", os.listdir(DOWNLOAD_DIR))  # Debug
+        print("Coincidencias encontradas:", files)  # Debug
         if files:
             return True
         time.sleep(1)
     return False
 
-def test_download_datasets():
-    """Prueba la descarga de datasets en diferentes formatos."""
+
+def test_download_datasets_index():
+    """Prueba la descarga de datasets desde el index en diferentes formatos."""
     driver = initialize_driver(download_dir=DOWNLOAD_DIR)
     clean_download_folder()
 
     try:
         host = get_host_for_selenium_testing()
-        driver.get(f"{host}/")
-        WebDriverWait(driver, 10).until(
-            lambda driver: driver.execute_script("return document.readyState") == "complete"
-        )
+        driver.get(f"{host}/")  # Página index
+        WebDriverWait(driver, 10).until(lambda d: d.execute_script("return document.readyState") == "complete")
 
-        # Lista de formatos y extensiones esperadas
         formats = {
-            "Glencoe": "txt",
-            "SPLOT": "txt",
-            "DIMACS": "txt",
-            "ZIP": "zip"
+            "Glencoe": "_glencoe.zip",
+            "SPLOT": "_splot.zip",
+            "DIMACS": "_dimacs.zip",
+            "ZIP": ".zip"  # Validar cualquier archivo con extensión .zip
         }
 
         for format_name, file_extension in formats.items():
-            # Hacer clic en el botón "Download"
+            print(f"Probando descarga para el formato: {format_name}")  # Debug
             download_button = WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, "//button[contains(@id, 'btnDownloadDropdown')]"))
             )
             ActionChains(driver).move_to_element(download_button).click().perform()
 
-            # Seleccionar el formato del desplegable
             dropdown_option = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, f"//a[contains(@onclick, \"{format_name.lower()}\")]"))
+                EC.element_to_be_clickable((By.XPATH, f"//a[contains(@onclick, \"{format_name.lower()}\") or contains(text(), 'ZIP')]"))
             )
             dropdown_option.click()
 
-            # Verificar que el archivo se ha descargado por su extensión
-            print(f"Esperando la descarga del archivo con extensión .{file_extension}...")
-            assert is_file_downloaded_by_extension(file_extension), f"El archivo con extensión .{file_extension} no se descargó correctamente."
-            print(f"El archivo con extensión .{file_extension} se descargó correctamente.")
+            if format_name == "ZIP":
+                # Validar cualquier archivo .zip descargado
+                assert is_file_downloaded_by_extension(".zip"), f"Archivo ZIP no descargado desde index."
+            else:
+                assert is_file_downloaded_by_extension(file_extension), f"Archivo *{file_extension} no descargado desde index."
 
-            time.sleep(2)  # Espera breve antes de continuar
+            print(f"Archivo *{file_extension} descargado correctamente.")
+            clean_download_folder()
 
-        print("Todos los archivos se descargaron correctamente. Test completado con éxito.")
-
+        print("Todos los archivos se descargaron correctamente desde el index.")
     finally:
-        close_driver(driver)  # Cerrar el navegador al finalizar el test
+        close_driver(driver)
 
-# Ejecutar el test
+
 if __name__ == "__main__":
-    test_download_datasets()
+    test_download_datasets_index()

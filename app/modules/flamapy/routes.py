@@ -1,11 +1,14 @@
+import os
+import zipfile
+import tempfile
 import logging
+
+from flask import send_file, jsonify, redirect, url_for
 from app.modules.hubfile.services import HubfileService
-from flask import send_file, jsonify
 from app.modules.flamapy import flamapy_bp
+
 from flamapy.metamodels.fm_metamodel.transformations import UVLReader, GlencoeWriter, SPLOTWriter
 from flamapy.metamodels.pysat_metamodel.transformations import FmToPysat, DimacsWriter
-import tempfile
-import os
 
 from antlr4 import CommonTokenStream, FileStream
 from uvl.UVLCustomLexer import UVLCustomLexer
@@ -115,3 +118,40 @@ def to_cnf(file_id):
     finally:
         # Clean up the temporary file
         os.remove(temp_file.name)
+
+@flamapy_bp.route('/flamapy/export_dataset/<int:dataset_id>/<string:format>', methods=['GET'])
+def export_dataset(dataset_id, format):
+    """Export all UVL files in the dataset to the specified format and package as a ZIP."""
+    hubfile_service = HubfileService()
+    files = hubfile_service.get_files_by_dataset_id(dataset_id)
+
+    if not files:
+        return jsonify({"error": "No files found for this dataset"}), 404
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        zip_filename = os.path.join(temp_dir, f"dataset_{dataset_id}_{format}.zip")
+
+        with zipfile.ZipFile(zip_filename, 'w') as zipf:
+            for file in files:
+                uvl_path = file.get_path()
+                fm = UVLReader(uvl_path).transform()
+
+                # Transform the file to the desired format
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=f".{format}")
+                try:
+                    if format == "glencoe":
+                        GlencoeWriter(temp_file.name, fm).transform()
+                    elif format == "splot":
+                        SPLOTWriter(temp_file.name, fm).transform()
+                    elif format == "dimacs":
+                        sat = FmToPysat(fm).transform()
+                        DimacsWriter(temp_file.name, sat).transform()
+                    else:
+                        return jsonify({"error": "Formato no soportado"}), 400
+
+                    # Add transformed file to ZIP
+                    zipf.write(temp_file.name, arcname=f"{file.name}.{format}")
+                finally:
+                    os.remove(temp_file.name)
+
+        return send_file(zip_filename, as_attachment=True, download_name=f"dataset_{dataset_id}_{format}.zip")

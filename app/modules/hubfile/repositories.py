@@ -26,6 +26,16 @@ class HubfileRepository(BaseRepository):
     
     def get_hubfile_by_id(self, hubfile_id: int) -> Hubfile:
         return db.session.query(Hubfile).filter(Hubfile.id == hubfile_id).first()
+    
+    def get_files_by_dataset_id(self, dataset_id):
+        """Obtiene todos los archivos relacionados con un dataset."""
+        dataset = DataSet.query.get(dataset_id)
+        if not dataset:
+            return []
+
+        # Extrae todos los archivos de los FeatureModels relacionados
+        files = [file for fm in dataset.feature_models for file in fm.files]
+        return files
 
 
 class HubfileViewRecordRepository(BaseRepository):
