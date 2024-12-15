@@ -1,3 +1,4 @@
+from typing import List
 from sqlalchemy import func
 from app.modules.auth.models import User
 from app.modules.dataset.models import DataSet
@@ -26,9 +27,12 @@ class HubfileRepository(BaseRepository):
     
     def get_hubfile_by_id(self, hubfile_id: int) -> Hubfile:
         return db.session.query(Hubfile).filter(Hubfile.id == hubfile_id).first()
-    def get_hubfile_by_dataset_id(self, dataset_id: int) -> Hubfile:
-        feature_model = db.session.query(FeatureModel).filter(FeatureModel.data_set_id == dataset_id).first()
-        return db.session.query(Hubfile).filter(Hubfile.feature_model_id == feature_model.id).first()
+    
+    def get_hubfiles_by_dataset_id(self, dataset_id: int) -> List[Hubfile]:
+        result = List()
+        for f_m in db.session.query(FeatureModel).filter(FeatureModel.data_set_id == dataset_id).all():
+            hf = db.session.query(Hubfile).filter(Hubfile.feature_model_id == f_m.id).first()
+        return result
 
 
 class HubfileViewRecordRepository(BaseRepository):

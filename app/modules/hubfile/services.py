@@ -1,4 +1,5 @@
 import os
+from typing import List
 from app.modules.auth.models import User
 from app.modules.dataset.models import DataSet
 from app.modules.hubfile.models import Hubfile
@@ -22,7 +23,7 @@ class HubfileService(BaseService):
     def get_dataset_by_hubfile(self, hubfile: Hubfile) -> DataSet:
         return self.repository.get_dataset_by_hubfile(hubfile)
     
-    def get_by_dataset_id(self, dataset_id: int) -> Hubfile:
+    def get_by_dataset_id(self, dataset_id: int) -> List[Hubfile]:
         return self.repository.get_hubfile_by_dataset_id(dataset_id)
     
     def get_path_by_hubfile(self, hubfile: Hubfile) -> str:
