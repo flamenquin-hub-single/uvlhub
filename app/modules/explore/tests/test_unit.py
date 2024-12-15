@@ -45,6 +45,18 @@ def test_filtering_service_num_of_leaf(test_client):
         f"Expected {expected_dataset_count} datasets, but got {len(datasets)}"
 
 
+def test_check_filtering_service_no_results(test_client):
+    """
+    Test to ensure that the filtering service correctly filters all datasets
+    based on the number of leaf nodes, as the maximum is lower than the minimum.
+    """
+    explore_service = ExploreService()
+    datasets = explore_service.filter(min_leaf_count=300, max_leaf_count=299)
+    expected_dataset_count = 0  # Expect no datasets.
+    assert len(datasets) == expected_dataset_count, \
+        f"Expected {expected_dataset_count} datasets, but got {len(datasets)}"
+
+
 def test_filtering_service_depth(test_client):
     """
     Test to ensure that the filtering service correctly counts datasets
@@ -98,6 +110,7 @@ def test_filtering_service_core_feature_name(test_client):
     # and "file5.uvl" as they contain "FitnessMonitor" in the core feature name.
     assert len(datasets) == expected_dataset_count, \
         f"Expected {expected_dataset_count} datasets, but got {len(datasets)}"
+
 
 def test_check_sorting_smallest_first(test_client):
     """
