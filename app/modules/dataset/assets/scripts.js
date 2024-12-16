@@ -117,7 +117,11 @@ var currentId = 0;
 	}
 
         function hide_loading() {
-            document.getElementById("upload_button").style.display = "block";
+	    if (document.getElementById("upload_button")) {
+            	document.getElementById("upload_button").style.display = "block";
+	    } else {
+		document.getElementById("check_model_button").style.display = "block";
+	    }
             document.getElementById("loading").style.display = "none";
         }
 
@@ -144,7 +148,6 @@ var currentId = 0;
 		if (document.getElementById('check_model_button')) {
 
 			document.getElementById('check_model_button').addEventListener('click', function () {
-				console.log("hi");
 				clean_upload_errors();
 				show_loading("check");
 
@@ -154,18 +157,54 @@ var currentId = 0;
 					body: ''
 				})
 					.then(response => {
+						let model = document.getElementById('rendered_model')
+						while (model.firstChild) {
+							model.removeChild(model.firstChild)
+						};
 						if (response.ok) {
+							let first_row = document.createElement('p');
+							first_row.bottom_margin = '15';
+							first_row.textContent = 'This model contains no errors. Here\'s the model:';	
+							model.appendChild(first_row);
 							console.log('Dataset sent successfully');
 							response.json().then(data => {
-								console.log(data.message);
-								//window.location.href = "/dataset/list";
+								for (let i=0;i<data.message.length;i++) {
+									let row = document.createElement('p');
+									row.style.margin = '0';
+									row.style.padding = '0';
+									let row_text = data.message[i];
+									row_text = row_text.replace(/\s/g, '\u00A0');
+									row.textContent = row_text;
+									model.appendChild(row);
+								};
+								model.style.display = 'block';
+								hide_loading();
 							});
 						} else {
 							response.json().then(data => {
-								console.error('Error: ' + data.message);
+								console.error('Error: ' + data.error);
+								if (data.syntax) {
+									let first_row = document.createElement('p');
+									first_row.bottom_margin = '15';
+									first_row.top_margin = '15';
+									first_row.textContent = 'Here\'s the model with the error highlighted:';	
+									model.appendChild(first_row);
+									for (let i=0;i<data.message.length;i++) {
+										let row = document.createElement('p');
+										row.style.margin = '0';
+										row.style.padding = '0';
+										let row_text = data.message[i];
+										row_text = row_text.replace(/\s/g, '\u00A0');
+										row.textContent = row_text;
+										model.appendChild(row);
+									};
+								};
 								hide_loading();
-
-								write_upload_error(data.message);
+								if (data.syntax) {
+									write_upload_error(data.error);
+								} else {
+									write_upload_error(data.message);
+								};
 
 							});
 						}
@@ -173,7 +212,6 @@ var currentId = 0;
 					.catch(error => {
 						console.error('Error in POST request:', error);
 					});
-				console.log("yeah")
 
 			});
 		}

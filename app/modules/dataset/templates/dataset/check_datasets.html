@@ -1,0 +1,266 @@
+{% extends "base_template.html" %}
+{% block title %}Check UVL model{% endblock %}
+{% block content %}
+    <h1 class="h2 mb-3"><b>Check UVL model</b></h1>
+
+    <div class="row">
+        <div class="col-12 mb-3">
+            <div class="alert alert-warning" role="alert" id="test_zenodo_connection_error" style="display: none">
+                <div class="alert-message">
+
+                    <h4 class="alert-heading"><i class="align-middle" data-feather="alert-triangle"></i> Limited
+                        connection to the Zenodo API</h4>
+                    <p class="p-0 m-0">
+                        There seems to be some kind of problem with the Zenodo API and synchronization of your dataset
+                        files may not be possible. We will save your files locally to eventually synchronize them with
+                        Zenodo. Sorry for the inconvenience, Zenodo is an external service and we can't do
+                        anything about it.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    {% if messages %}
+        <ul>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <div class="row">
+        <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
+            <h1 class="h3 mb-3 mt-2">UVL model to be checked</h1>
+            <div id="uploaded_models_form" style="padding-left: 2rem">
+                
+		{{ form.hidden_tag() }}
+                <form action="{{ url_for('dataset.upload') }}" class="dropzone" id="myDropzone">
+                    <div id="dropzone-text"></div>
+                </form>
+                <span class="text-danger" id="alerts" style="display: none">
+                    </span>
+                <ul class="mt-2" id="file-list"></ul>
+                <script>
+                    let dropzone = Dropzone.options.myDropzone = {
+                        url: "/dataset/file/upload/check",
+                        paramName: 'file',
+                        maxFilesize: 10,
+                        acceptedFiles: '.uvl',
+                        init: function () {
+				let fileList = document.getElementById('file-list');
+				let dropzoneText = document.getElementById('dropzone-text');
+				let alerts = document.getElementById('alerts');
+				this.on('addedfile', function (file) {
+					let ext = file.name.split('.').pop();
+					if (ext !== 'uvl') {
+						this.removeFile(file);
+						let alert = document.createElement('p');
+						if (alerts.children.length>0) {
+							alerts.removeChild(alerts.children[0])
+						}
+						alert.textContent = 'Invalid file extension: ' + file.name;
+						alerts.appendChild(alert);
+						alerts.style.display = 'block';
+					}
+					else if (fileList.childElementCount > 0) {
+						this.removeFile(file);
+						if (alerts.children.length>0) {
+							alerts.removeChild(alerts.children[0])
+						}
+
+						let alert = document.createElement('p');
+						alert.textContent = 'Only one check at a time!';
+						alerts.appendChild(alert);
+						alerts.style.display = 'block';
+					}
+                            });
+                            this.on('success', function (file, response) {
+                                let dropzone = this;
+                                show_upload_dataset();
+                                console.log("File uploaded: ", response);
+                                // actions when UVL model is uploaded
+                                let listItem = document.createElement('li');
+                                let h4Element = document.createElement('h4');
+                                h4Element.textContent = response.filename;
+                                listItem.appendChild(h4Element);
+                                // generate incremental id for form
+                                let formUniqueId = generateIncrementalId();
+                               /*
+                                    ##########################################
+                                    REMOVE BUTTON
+                                    ##########################################
+                                */
+                                // remove button
+                                let removeButton = document.createElement('button');
+                                removeButton.innerHTML = 'Delete model';
+                                removeButton.classList.add("remove-button", "btn", "btn-outline-danger", "btn-sm", "remove-button");
+                                removeButton.style.borderRadius = '5px';
+                                removeButton.addEventListener('click', function () {
+				    let model = document.getElementById('rendered_model')
+				    while (model.firstChild) {
+					    model.removeChild(model.firstChild)
+				    };
+                                    fileList.removeChild(listItem);
+                                    this.removeFile(file);
+                                    // Ajax request
+                                    let xhr = new XMLHttpRequest();
+                                    xhr.open('POST', '/dataset/file/delete', true);
+                                    xhr.setRequestHeader('Content-Type', 'application/json');
+                                    xhr.onload = function () {
+                                        if (xhr.status === 200) {
+                                            console.log('Deleted file from server');
+                                            if (dropzone.files.length === 0) {
+                                                document.getElementById("upload_dataset").style.display = "none";
+                                                clean_upload_errors();
+                                            }
+                                        }
+                                    };
+                                    xhr.send(JSON.stringify({file: file.name}));
+                                }.bind(this));
+                                /*
+                                    ##########################################
+                                    APPEND BUTTONS
+                                    ##########################################
+                                */
+                                listItem.appendChild(removeButton);
+                                /*
+                                    ##########################################
+                                    UVL FORM
+                                    ##########################################
+                                */
+                                // create specific form for UVL
+                                let formContainer = document.createElement('div');
+                                formContainer.id = formUniqueId + "_form";
+                                formContainer.classList.add('uvl_form', "mt-3");
+                                formContainer.style.display = "none";
+                                formContainer.innerHTML = `
+                                    <div class="row">
+                                        <input type="hidden" value="${response.filename}" name="feature_models-${formUniqueId}-uvl_filename">
+                                        <div class="col-12">
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Title</label>
+                                                        <input type="text" class="form-control" name="feature_models-${formUniqueId}-title">
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Description</label>
+                                                        <textarea rows="4" class="form-control" name="feature_models-${formUniqueId}-desc"></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-6 col-12">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="publication_type">Publication type</label>
+                                                        <select class="form-control" name="feature_models-${formUniqueId}-publication_type">
+                                                            <option value="none">None</option>
+                                                            <option value="annotationcollection">Annotation Collection</option>
+                                                            <option value="book">Book</option>
+                                                            <option value="section">Book Section</option>
+                                                            <option value="conferencepaper">Conference Paper</option>
+                                                            <option value="datamanagementplan">Data Management Plan</option>
+                                                            <option value="article">Journal Article</option>
+                                                            <option value="patent">Patent</option>
+                                                            <option value="preprint">Preprint</option>
+                                                            <option value="deliverable">Project Deliverable</option>
+                                                            <option value="milestone">Project Milestone</option>
+                                                            <option value="proposal">Proposal</option>
+                                                            <option value="report">Report</option>
+                                                            <option value="softwaredocumentation">Software Documentation</option>
+                                                            <option value="taxonomictreatment">Taxonomic Treatment</option>
+                                                            <option value="technicalnote">Technical Note</option>
+                                                            <option value="thesis">Thesis</option>
+                                                            <option value="workingpaper">Working Paper</option>
+                                                            <option value="other">Other</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-6 col-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="publication_doi">Publication DOI</label>
+                                                        <input class="form-control" name="feature_models-${formUniqueId}-publication_doi" type="text" value="">
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Tags (separated by commas)</label>
+                                                        <input type="text" class="form-control" name="feature_models-${formUniqueId}-tags">
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">UVL version</label>
+                                                        <input type="text" class="form-control" name="feature_models-${formUniqueId}-uvl_version">
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Authors</label>
+                                                        <div id="` + formContainer.id + `_authors">
+                                                        </div>
+                                                        <button type="button" class="add_author_to_uvl btn btn-secondary" id="` + formContainer.id + `_authors_button">Add author</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    `;
+                                listItem.appendChild(formContainer);
+                                fileList.appendChild(listItem);
+                            });
+                            this.on('addedfile', function (file) {
+
+                                let ext = file.name.split('.').pop();
+                                if (ext !== 'uvl') {
+                                    this.removeFile(file);
+
+                                    let alert = document.createElement('p');
+                                    alert.textContent = 'Invalid file extension: ' + file.name;
+				    if (alerts.children.length>0) {
+					alerts.removeChild(alerts.children[0])
+				    }
+                                    alerts.appendChild(alert);
+                                    alerts.style.display = 'block';
+                                }
+
+                            });
+                        }
+                    };
+                </script>
+            </div>
+        </div>
+    </div>
+    <div class="row" id="upload_dataset" style="display: none">
+        <div class="col-12">
+            <hr>
+            <h1 class="h3 mb-3 mt-2">Check model and render errors</h1>
+            <div style="padding-left: 2rem">
+                <button id="check_model_button" class="btn btn-primary mt-2" disabled>
+                    <i data-feather="upload" class="center-button-icon"></i>
+                    Check</button>
+                <div id="loading" style="display: none">
+                    <img width="40px" src="{{ url_for("static", filename="gifs/loading.svg") }}"/>
+                    Uploading and checking model, please wait...
+                </div>
+                <div class="row">
+                    <div class="col-12 mb-3">
+                    </div>
+                </div>
+                
+                <span class="text-danger mt-2" id="upload_error" style="display: none"></span>
+                <p class="p-0 m-0" id="rendered_model"></p>
+	    </div>
+	    <script>
+		    const upload_button = document.getElementById('check_model_button');
+		    upload_button.disabled = false;
+	    </script>
+
+        </div>
+    </div>
+{% endblock %}
+{% block scripts %}
+    <script src="{{ url_for('zenodo.scripts') }}"></script>
+    <script src="{{ url_for('dataset.scripts') }}"></script>
+{% endblock %}
