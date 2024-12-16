@@ -99,7 +99,7 @@
                                         <li><a class="dropdown-item" href="javascript:void(0);" onclick="downloadDataset('{{ dataset.id }}', 'glencoe')">Glencoe</a></li>
                                         <li><a class="dropdown-item" href="javascript:void(0);" onclick="downloadDataset('{{ dataset.id }}', 'splot')">SPLOT</a></li>
                                         <li><a class="dropdown-item" href="javascript:void(0);" onclick="downloadDataset('{{ dataset.id }}', 'dimacs')">DIMACS</a></li>
-                                        <li><a class="dropdown-item" href="javascript:void(0);" onclick="downloadDataset('{{ dataset.id }}', 'zip')">ZIP</a></li>
+                                        <li><a class="dropdown-item" href="{{ url_for('dataset.download_dataset', dataset_id=dataset.id) }}">ZIP</a></li>
                                     </ul>
                                 </div>                                
                             </div>

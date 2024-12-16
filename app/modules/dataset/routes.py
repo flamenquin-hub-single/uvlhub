@@ -25,11 +25,8 @@ from app.modules.dataset.services import (
 )
 from app.modules.hubfile.repositories import HubfileRepository
 from app.modules.zenodo.services import ZenodoService
-from app.modules.dataset.parser import get_tree
-logger = logging.getLogger(__name__)
 from flask_dance.contrib.github import github
-
-
+from .parser import get_tree
 logger = logging.getLogger(__name__)
 
 dataset_service = DataSetService()
@@ -101,7 +98,6 @@ def list_dataset():
         local_datasets=dataset_service.get_unsynchronized(current_user.id),
     )
 
-
 @dataset_bp.route("/dataset/check", methods=["GET", "POST"])
 @login_required
 def check_dataset():
@@ -166,7 +162,6 @@ def upload_aux(file,check):
         except Exception as e:
             os.remove(file_path)
             return jsonify({"message": str(e),"syntax": True}),400
-    
     return (
         jsonify(
             {
@@ -418,18 +413,7 @@ def commit_file(file_id):
 
     return render_template("dataset/view_dataset.html", dataset=dataset)
 
-@dataset_bp.route("/dataset/download/<int:file_id>/<string:format>", methods=["GET"])
-def download_dataset_format(file_id, format):
-    """Endpoint to download dataset in the specified format.
-    Formats supported: glencoe, splot, dimacs, zip.
-    """
-    if format == "glencoe":
-        return redirect(url_for("flamapy.to_glencoe", file_id=file_id))
-    elif format == "splot":
-        return redirect(url_for("flamapy.to_splot", file_id=file_id))
-    elif format == "dimacs":
-        return redirect(url_for("flamapy.to_cnf", file_id=file_id))
-    elif format == "zip":
-        return redirect(url_for("dataset.download_dataset", dataset_id=file_id))
-    else:
-        return jsonify({"error": "Formato no soportado"}), 400
+@dataset_bp.route("/dataset/download/<int:dataset_id>/<string:format>", methods=["GET"])
+def download_dataset_format(dataset_id, format):
+    """Redirect to Flamapy's export_dataset endpoint."""
+    return redirect(url_for("flamapy.export_dataset", dataset_id=dataset_id, format=format))
