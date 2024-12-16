@@ -1,12 +1,12 @@
-name: Deploy develop branch to Render
+name: Deploy main branch to Render
 
 on:
     push:
       branches:
-        - develop
+        - main
     pull_request:
       branches:
-        - develop
+        - main
 
 jobs:
 
@@ -30,8 +30,6 @@ jobs:
     steps:
 
     - uses: actions/checkout@v4
-      with:
-        ref: 'develop'
 
     - uses: actions/setup-python@v5
       with:
@@ -63,11 +61,10 @@ jobs:
 
       - name: Deploy to Render
         env:
-          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL_DEVELOP }}
+          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_RENDER }}
           ORG_TOKEN_ADMIN: ${{ secrets.ORG_TOKEN_ADMIN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_PAT: ${{ secrets.GH_PAT }}
-          CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
         run: |
           curl "$deploy_url"
       
