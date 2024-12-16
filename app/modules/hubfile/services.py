@@ -16,6 +16,11 @@ class HubfileService(BaseService):
         self.hubfile_view_record_repository = HubfileViewRecordRepository()
         self.hubfile_download_record_repository = HubfileDownloadRecordRepository()
 
+    # Nuevo método para obtener archivos por dataset
+    def get_files_by_dataset_id(self, dataset_id):
+        """Obtiene todos los archivos UVL asociados a un dataset."""
+        return self.repository.get_files_by_dataset_id(dataset_id)
+
     def get_owner_user_by_hubfile(self, hubfile: Hubfile) -> User:
         return self.repository.get_owner_user_by_hubfile(hubfile)
 

@@ -111,7 +111,6 @@ class ExploreRepository(BaseRepository):
 
                 if leaf_feature_name:
                     leaf_feature_names = model.get_leaf_feature_names()
-                    print(leaf_feature_name)
                     if leaf_feature_name not in leaf_feature_names:
                         continue
 

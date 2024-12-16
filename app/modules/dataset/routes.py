@@ -26,8 +26,7 @@ from app.modules.dataset.services import (
 from app.modules.hubfile.repositories import HubfileRepository
 from app.modules.zenodo.services import ZenodoService
 from flask_dance.contrib.github import github
-
-
+from .parser import get_tree
 logger = logging.getLogger(__name__)
 
 dataset_service = DataSetService()
@@ -113,10 +112,14 @@ def check_dataset():
         file_path = os.path.join(temp_folder, filename)
         
         with open(file_path) as f:
-            indent = 0
-            x = "".join([i for i in f])
-            print(x)
-        return jsonify({"message": x}),200
+            x = [i.rstrip() for i in f]
+        try:
+            get_tree(file_path)
+        except Exception as e:
+            line = int(str(e).split(':')[1].split(' ')[-1])
+            x[line-1] = x[line-1] + "   <--- HERE'S THE ERROR"
+            return jsonify({"message":x,"error":str(e),"syntax":True}),400
+        return jsonify({"message": x,"error":False}),200
    
     # setting things up for the checker to have only one file available
     temp_folder = current_user.temp_folder()
@@ -126,10 +129,7 @@ def check_dataset():
     return render_template(
         "dataset/check_datasets.html", form = form )
 
-@dataset_bp.route("/dataset/file/upload", methods=["POST"])
-@login_required
-def upload():
-    file = request.files["file"]
+def upload_aux(file,check):
     temp_folder = current_user.temp_folder()
 
     if not file or not file.filename.endswith(".uvl"):
@@ -156,7 +156,12 @@ def upload():
         file.save(file_path)
     except Exception as e:
         return jsonify({"message": str(e)}), 500
-
+    if check:
+        try:
+            get_tree(file_path)
+        except Exception as e:
+            os.remove(file_path)
+            return jsonify({"message": str(e),"syntax": True}),400
     return (
         jsonify(
             {
@@ -166,6 +171,19 @@ def upload():
         ),
         200,
     )
+
+@dataset_bp.route("/dataset/file/upload", methods=["POST"])
+@login_required
+def upload():
+    file = request.files["file"]
+    return upload_aux(file,True)
+
+@dataset_bp.route("/dataset/file/upload/check", methods=["POST"])
+@login_required
+def upload_check():
+    file = request.files["file"]
+    return upload_aux(file,False)
+
 
 @dataset_bp.route("/dataset/file/delete", methods=["POST"])
 def delete():
@@ -293,8 +311,10 @@ def get_unsynchronized_dataset(dataset_id):
         "annote": ds_meta_data.description
     }
     texto_howpublished = "https://zenodo.org/records/{}" if os.environ.get("FLASK_ENV").lower()=="production" else "https://sandbox.zenodo.org/records/{}"
-    bibtex_propiedades["howpublished"] = texto_howpublished.format(ds_meta_data.deposition_id)
-    
+    if ds_meta_data.deposition_id:
+        bibtex_propiedades["howpublished"] = texto_howpublished.format(ds_meta_data.deposition_id)
+    else:
+        bibtex_propiedades.pop("howpublished")
     lineas_preview ="@misc{MiscUvl" + ds_meta_data.title.replace(" ", "") + ",\n  "
     lineas_preview += "\n  ".join([k_ + " = {" + v_+ "}," for (k_,v_) in bibtex_propiedades.items()]) + "\n}"
 
@@ -395,18 +415,7 @@ def commit_file(file_id):
 
     return render_template("dataset/view_dataset.html", dataset=dataset)
 
-@dataset_bp.route("/dataset/download/<int:file_id>/<string:format>", methods=["GET"])
-def download_dataset_format(file_id, format):
-    """Endpoint to download dataset in the specified format.
-    Formats supported: glencoe, splot, dimacs, zip.
-    """
-    if format == "glencoe":
-        return redirect(url_for("flamapy.to_glencoe", file_id=file_id))
-    elif format == "splot":
-        return redirect(url_for("flamapy.to_splot", file_id=file_id))
-    elif format == "dimacs":
-        return redirect(url_for("flamapy.to_cnf", file_id=file_id))
-    elif format == "zip":
-        return redirect(url_for("dataset.download_dataset", dataset_id=file_id))
-    else:
-        return jsonify({"error": "Formato no soportado"}), 400
+@dataset_bp.route("/dataset/download/<int:dataset_id>/<string:format>", methods=["GET"])
+def download_dataset_format(dataset_id, format):
+    """Redirect to Flamapy's export_dataset endpoint."""
+    return redirect(url_for("flamapy.export_dataset", dataset_id=dataset_id, format=format))
