@@ -51,7 +51,7 @@ else
     flask db upgrade
 fi
 
-python fakenodo/run.py &
+python ./fakenodo/run.py &
 
 # Start the application using Gunicorn, binding it to port 80
 # Set the logging level to info and the timeout to 3600 seconds
