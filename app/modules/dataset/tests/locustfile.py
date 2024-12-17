@@ -89,36 +89,9 @@ class CommitFileBehavior(TaskSet):
         else:
             print(f"Unexpected status for File {file_id}: {response.status_code} - {response.text}")
             
-
-class DownloadDatasets(TaskSet):
-    formats = {
-        "Glencoe": "glencoe",
-        "SPLOT": "splot",
-        "DIMACS": "dimacs",
-        "ZIP": "zip"
-    }
-
-    @task
-    def download_files(self):
-        for dataset_id in self.dataset_ids:  # Itera sobre tus dataset_ids
-            for format_name, format_value in self.formats.items():  # Itera sobre los formatos
-                with self.client.get(
-                    f"/flamapy/export/dataset/{dataset_id}/{format_value}",  # URL corregida
-                    name=f"Download {format_name}",
-                    allow_redirects=True,  # Sigue automáticamente las redirecciones
-                    catch_response=True  # Captura la respuesta para análisis
-                ) as response:
-                    if response.status_code == 200:  # Descarga exitosa
-                        response.success()
-                    elif response.status_code == 302:  # Redirección
-                        response.success()  # Tratamos 302 como éxito
-                    else:
-                        response.failure(
-                            f"Failed to download {format_name} for dataset {dataset_id} "
-                            f"with status code {response.status_code}"
-                        )
+         
 
 class DatasetUser(HttpUser):
-    tasks = [DatasetBehavior, CommitDatasetBehavior, CommitFileBehavior, DownloadDatasets]
+    tasks = [DatasetBehavior, CommitDatasetBehavior, CommitFileBehavior]
     wait_time = between(5, 9)
     host = get_host_for_locust_testing()
