@@ -196,7 +196,7 @@ def delete():
         os.remove(filepath)
         return jsonify({"message": "File deleted successfully"})
 
-    return jsonify({"error": "Error: File not found"})
+    return jsonify({"error": "File not found"})
 
 @dataset_bp.route("/dataset/download/<int:dataset_id>", methods=["GET"])
 def download_dataset(dataset_id):
