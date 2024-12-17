@@ -62,6 +62,7 @@ RUN apt-get update && apt-get install -y git
 
 # Expose port 80
 EXPOSE 80
+EXPOSE 5001
 
 # Command to run the application
 CMD ["./render_entrypoint.sh"]
