@@ -12,6 +12,11 @@ from core.environment.host import get_host_for_selenium_testing
 
 DOWNLOAD_DIR = "/tmp/selenium_downloads"  # Ruta de descargas personalizada
 
+# Asegurarse de que la carpeta de descargas exista
+if not os.path.exists(DOWNLOAD_DIR):
+    os.makedirs(DOWNLOAD_DIR)
+    print(f"✅ Carpeta de descargas creada: {DOWNLOAD_DIR}")
+
 
 def initialize_driver(download_dir=None):
     options = Options()
