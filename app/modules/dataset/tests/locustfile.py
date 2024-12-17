@@ -1,4 +1,3 @@
-
 import random
 from locust import HttpUser, TaskSet, task, between
 from core.locust.common import get_csrf_token
@@ -40,7 +39,7 @@ class CommitDatasetBehavior(TaskSet):
 
     @task
     def commit_dataset(self):
-        dataset_id = random.randint(1, 10)
+        dataset_id = random.randint(1, 5)
         response = self.client.post(f"/dataset/commit/{dataset_id}", json={})
         
         if response.status_code == 200:
@@ -74,41 +73,25 @@ class CommitFileBehavior(TaskSet):
             print(f"Login failed: {response.status_code}, {response.text}")
         else:
             print("User successfully logged in.")
-
-class DownloadDatasets(TaskSet):
-    formats = {
-        "Glencoe": "glencoe",
-        "SPLOT": "splot",
-        "DIMACS": "dimacs",
-        "ZIP": "zip"
-    }
-
+            
+            
     @task
-    def download_files(self):
-        for dataset_id in self.dataset_ids:  # Itera sobre tus dataset_ids
-            for format_name, format_value in self.formats.items():  # Itera sobre los formatos
-                with self.client.get(
-                    f"/flamapy/export/dataset/{dataset_id}/{format_value}",  # URL corregida
-                    name=f"Download {format_name}",
-                    allow_redirects=True,  # Sigue automáticamente las redirecciones
-                    catch_response=True  # Captura la respuesta para análisis
-                ) as response:
-                    if response.status_code == 200:  # Descarga exitosa
-                        response.success()
-                    elif response.status_code == 302:  # Redirección
-                        response.success()  # Tratamos 302 como éxito
-                    else:
-                        response.failure(
-                            f"Failed to download {format_name} for dataset {dataset_id} "
-                            f"with status code {response.status_code}"
-                        )
+    def commit_dataset(self):
+        file_id = random.randint(1, 5)  
+        response = self.client.post(f"/dataset/commit_file/{file_id}", json={})
+        
+        if response.status_code == 200:
+            print(f"File {file_id} committed successfully: {response.text}")
+        elif response.status_code == 404:
+            print(f"File {file_id} not found: {response.status_code}")
+        elif response.status_code == 500:
+            print(f"Server error for File {file_id}: {response.status_code} - {response.text}")
+        else:
+            print(f"Unexpected status for File {file_id}: {response.status_code} - {response.text}")
+            
+         
 
 class DatasetUser(HttpUser):
-    """
-    Clase principal que define los usuarios y su comportamiento.
-    """
-    tasks = [CommitFileBehavior]  # Asigna la tarea de descarga
-    min_wait = 5000  # Espera mínima de 5 segundos
-    max_wait = 9000  # Espera máxima de 9 segundos
-    wait_time = between(5, 9)  # Espera aleatoria entre tareas
-    host = "http://localhost:5000"  # La URL base de tu aplicación
+    tasks = [DatasetBehavior, CommitDatasetBehavior, CommitFileBehavior]
+    wait_time = between(5, 9)
+    host = get_host_for_locust_testing()
